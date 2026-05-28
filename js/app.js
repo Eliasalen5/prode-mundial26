@@ -1,4 +1,36 @@
 // ============================================================
+// MATCHES FROM SEED + SCORES FROM FIRESTORE
+// ============================================================
+function initMatches() {
+  if (state.matches.length > 0) return;
+  state.matches = getSeedData();
+  if (!unsubScores) {
+    unsubScores = db.collection('matches').onSnapshot(snap => {
+      let changed = false;
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added' || change.type === 'modified') {
+          const data = change.doc.data();
+          const idx = state.matches.findIndex(m => m.id === change.doc.id);
+          if (idx !== -1) {
+            const oldHome = state.matches[idx].homeScore;
+            const oldAway = state.matches[idx].awayScore;
+            state.matches[idx].homeScore = data.homeScore != null ? data.homeScore : null;
+            state.matches[idx].awayScore = data.awayScore != null ? data.awayScore : null;
+            state.matches[idx].status = data.status || 'locked';
+            if ((oldHome ?? null) !== state.matches[idx].homeScore || (oldAway ?? null) !== state.matches[idx].awayScore) {
+              changed = true;
+            }
+          }
+        }
+      });
+      if (changed && !['/posiciones'].includes(getPage())) {
+        render();
+      }
+    });
+  }
+}
+
+// ============================================================
 // CACHED USERS
 // ============================================================
 let _cachedUsersMap = null;
@@ -55,7 +87,7 @@ async function rebuildLeaderboard(predSnap) {
       username: usersMap[uid],
       points: catPoints[uid],
     })).sort((a, b) => b.points - a.points);
-    return { key: cat.key, label: cat.label, users: catUsers };
+    return { key: cat.key, label: cat.label, matchdays: cat.matchdays, users: catUsers };
   });
 }
 
@@ -110,28 +142,42 @@ function handlePay() {
   }, 0);
   const username = state.userData?.username || state.user?.email || 'Usuario';
   const msg = encodeURIComponent(
-    `Hola Elias, soy ${username}. Voy a transferirte $${total} por estos partidos:\n\n${lines.join('\n')}\n\nTe mando el comprobante. Alias: Eliasalen5`
+    `Hola Elias, soy ${username}. Te voy a transferir $${total} por estos partidos:\n\n${lines.join('\n')}\n\nAlias: Eliasalen5 — Ahora te mando el comprobante.`
   );
   window.open(`https://wa.me/543329300352?text=${msg}`, '_blank');
 }
 
 async function handleSavePrediction(matchId) {
+  if (!state.user) { showToast('⚠️ Iniciá sesión primero'); return; }
   const s = state.homeScores[matchId];
-  if (!s || s.home === '' || s.away === '' || !state.user) return;
-  const docId = state.user.uid + '_' + matchId;
-  const existing = state.predictions[matchId];
-  const paid = existing?.paid || false;
-  await db.collection('predictions').doc(docId).set({
-    userId: state.user.uid,
-    matchId: matchId,
-    homeScore: Number(s.home),
-    awayScore: Number(s.away),
-    paid: paid,
-    status: paid ? 'submitted' : 'pending',
-    updatedAt: new Date(),
-  }, { merge: true });
-  await loadPredictionsForUser(state.user.uid);
-  render();
+  if (!s || s.home === '' || s.away === '') { showToast('⚠️ Completá ambos marcadores'); return; }
+
+  const match = getMatchById(matchId);
+  if (!match) return;
+  const matchDate = match.matchDate?.toDate ? match.matchDate.toDate() : new Date(match.date);
+  if (matchDate.getTime() - Date.now() < 10 * 60 * 1000) {
+    showToast('⏰ El partido ya está bloqueado (menos de 10 min)');
+    return;
+  }
+  try {
+    const docId = state.user.uid + '_' + matchId;
+    const existing = state.predictions[matchId];
+    const paid = existing?.paid || false;
+    await db.collection('predictions').doc(docId).set({
+      userId: state.user.uid,
+      matchId: matchId,
+      homeScore: Number(s.home),
+      awayScore: Number(s.away),
+      paid: paid,
+      status: paid ? 'submitted' : 'pending',
+      updatedAt: new Date(),
+    }, { merge: true });
+    await loadPredictionsForUser(state.user.uid);
+    showToast('✅ Pronóstico guardado');
+    render();
+  } catch (e) {
+    showToast('❌ Error al guardar: ' + e.message);
+  }
 }
 
 async function handleConfirmPay(predId) {
@@ -153,11 +199,11 @@ async function handleConfirmPay(predId) {
 async function handleSaveResult(matchId) {
   const s = state.adminScores[matchId];
   if (!s || s.home === '' || s.away === '') return;
-  await db.collection('matches').doc(matchId).update({
+  await db.collection('matches').doc(matchId).set({
     homeScore: Number(s.home),
     awayScore: Number(s.away),
     status: 'played',
-  });
+  }, { merge: true });
   const match = getMatchById(matchId);
   const isFeatured = match?.featured;
   const exactPts = isFeatured ? 5 : 3;
@@ -176,38 +222,6 @@ async function handleSaveResult(matchId) {
     batch.update(db.collection('predictions').doc(d.id), { points: pts, status: 'scored' });
   });
   await batch.commit();
-}
-
-async function handleSeed() {
-  if (!confirm('¿Estás seguro? Se crearán todos los partidos en Firestore.')) return;
-  const data = getSeedData();
-  let count = 0;
-  for (let i = 0; i < data.length; i++) {
-    const m = data[i];
-    await db.collection('matches').doc('match_' + (i + 1)).set({
-      ...m,
-      matchDate: Timestamp.fromDate(new Date(m.date)),
-      status: 'locked',
-      homeScore: null,
-      awayScore: null,
-    });
-    count++;
-  }
-  alert(count + ' partidos cargados correctamente');
-}
-
-async function handlePatchFeatured() {
-  if (!confirm('Actualizar partidos destacados?')) return;
-  const data = getSeedData();
-  let count = 0;
-  for (let i = 0; i < data.length; i++) {
-    const m = data[i];
-    if (m.featured) {
-      await db.collection('matches').doc('match_' + (i + 1)).update({ featured: true, price: 1000 });
-      count++;
-    }
-  }
-  alert(count + ' partidos destacados actualizados');
 }
 
 function showToast(msg) {
@@ -237,9 +251,7 @@ document.getElementById('root').addEventListener('click', (e) => {
   else if (action === 'save-prediction') handleSavePrediction(e.target.dataset.matchId);
   else if (action === 'confirm-pay') handleConfirmPay(e.target.dataset.predId);
   else if (action === 'save-result') handleSaveResult(e.target.dataset.matchId);
-  else if (action === 'seed') handleSeed();
-  else if (action === 'patch-featured') handlePatchFeatured();
-  else if (action === 'mark-all-notif-read') {
+   else if (action === 'mark-all-notif-read') {
     state.notifications.filter(n => !n.read).forEach(n => {
       db.collection('notifications').doc(n.id).update({ read: true });
     });
@@ -332,4 +344,5 @@ window.addEventListener('hashchange', render);
 // Hace que toggleLbSection sea accesible desde onclick en HTML
 window.toggleLbSection = toggleLbSection;
 
+initMatches();
 render();

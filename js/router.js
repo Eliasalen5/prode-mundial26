@@ -19,7 +19,7 @@ function render() {
     navigate('/');
     return;
   }
-  if (['/admin/pagos','/admin/resultados','/admin/historial','/seed'].includes(page) && state.userData?.role !== 'admin') {
+  if (['/admin/pagos','/admin/resultados','/admin/historial'].includes(page) && state.userData?.role !== 'admin') {
     cleanupListeners();
     currentPage = '/';
     navigate('/');
@@ -39,20 +39,12 @@ function render() {
   else if (page === '/notificaciones') content = buildNotificaciones();
   else if (page === '/admin/pagos') content = buildAdminPagos();
   else if (page === '/admin/resultados') content = buildAdminResultados();
-  else if (page === '/admin/historial') content = buildAdminHistorial();
-  else if (page === '/seed') content = buildSeed();
-  else content = buildHome();
+   else if (page === '/admin/historial') content = buildAdminHistorial();
+   else content = buildHome();
 
   document.getElementById('root').innerHTML = buildNavbar() + '<main class="main-content">' + content + '</main>';
 
   // Home page listeners
-  if (page === '/' && !unsubMatches) {
-    unsubMatches = db.collection('matches').orderBy('matchDate').onSnapshot(async (snap) => {
-      state.matches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if (state.user) await loadPredictionsForUser(state.user.uid);
-      render();
-    });
-  }
   if (page === '/' && !unsubPredictions && state.user) {
     unsubPredictions = db.collection('predictions').where('userId', '==', state.user.uid).onSnapshot(async (snap) => {
       state.predictions = {};
@@ -82,33 +74,15 @@ function render() {
   // Admin historial
   if (page === '/admin/historial' && !unsubPagos) {
     loadCachedUsers();
-    if (!unsubMatches) {
-      unsubMatches = db.collection('matches').orderBy('matchDate').onSnapshot((snap) => {
-        state.matches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      });
-    }
     unsubPagos = db.collection('predictions').onSnapshot((snap) => {
       state.paidHistory = snap.docs.filter(d => d.data().paid).map(d => ({ id: d.id, ...d.data() }));
       render();
     });
   }
 
-  // Admin resultados
-  if (page === '/admin/resultados' && !unsubMatches) {
-    unsubMatches = db.collection('matches').orderBy('matchDate').onSnapshot((snap) => {
-      state.matches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      render();
-    });
-  }
 
   // Posiciones (leaderboard)
   if (page === '/posiciones') {
-    if (!unsubMatches) {
-      unsubMatches = db.collection('matches').orderBy('matchDate').onSnapshot((snap) => {
-        state.matches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        if (getPage() === '/posiciones') render();
-      });
-    }
     if (!unsubLeaderboard) {
       unsubLeaderboard = db.collection('predictions').onSnapshot(async (snap) => {
         await rebuildLeaderboard(snap);

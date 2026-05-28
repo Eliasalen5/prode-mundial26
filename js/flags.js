@@ -17,8 +17,9 @@ const FLAG_CODES = {
   'RD Congo': 'cd', 'Cabo Verde': 'cv',
   'Japón': 'jp', 'Corea del Sur': 'kr', 'Australia': 'au',
   'Arabia Saudita': 'sa', 'Irán': 'ir', 'Qatar': 'qa',
-  'Irak': 'iq', 'Emiratos Árabes': 'ae', 'Uzbekistán': 'uz',
+  'Catar': 'qa', 'Irak': 'iq', 'Emiratos Árabes': 'ae', 'Uzbekistán': 'uz',
   'Jordania': 'jo', 'Omán': 'om', 'Baréin': 'bh',
+  'Bosnia y Herzegovina': 'ba', 'Haití': 'ht', 'Curazao': 'cw',
   'Estados Unidos': 'us', 'México': 'mx', 'Canadá': 'ca',
   'Costa Rica': 'cr', 'Panamá': 'pa', 'Jamaica': 'jm',
   'Honduras': 'hn', 'El Salvador': 'sv',
@@ -26,6 +27,7 @@ const FLAG_CODES = {
 };
 
 function teamHTML(name) {
-  const code = FLAG_CODES[name] || 'unknown';
+  const code = FLAG_CODES[name];
+  if (!code) return esc(name);
   return `<img src="https://flagcdn.com/24x18/${code}.png" alt="${esc(name)}" style="vertical-align:middle;margin-right:4px;border-radius:2px"> ${esc(name)}`;
 }

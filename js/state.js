@@ -10,7 +10,7 @@ const state = {
   expandedUser: null,
   leaderboardMD: [],
   expandedLbKey: '',
-  collapsedGroups: {},
+  collapsedGroups: { fecha_1: true, fecha_2: true, fecha_3: true, fecha_elim: true },
   pendingPagos: [],
   paidHistory: [],
   usersMap: {},
@@ -24,7 +24,7 @@ const state = {
   error: '',
 };
 
-let unsubMatches = null;
+let unsubScores = null;
 let unsubPagos = null;
 let unsubNotifications = null;
 let unsubPredictions = null;
@@ -32,7 +32,6 @@ let unsubLeaderboard = null;
 let currentPage = '';
 
 function cleanupListeners() {
-  if (unsubMatches) { unsubMatches(); unsubMatches = null; }
   if (unsubPagos) { unsubPagos(); unsubPagos = null; }
   if (unsubNotifications) { unsubNotifications(); unsubNotifications = null; }
   if (unsubPredictions) { unsubPredictions(); unsubPredictions = null; }

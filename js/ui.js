@@ -13,7 +13,6 @@ function buildNavbar() {
     menu.push({ href: '/admin/pagos', label: '💳 Pagos', admin: true });
     menu.push({ href: '/admin/resultados', label: '📋 Resultados', admin: true });
     menu.push({ href: '/admin/historial', label: '📜 Historial', admin: true });
-    menu.push({ href: '/seed', label: '⚙️ Seed', admin: true });
   }
   let html = `<nav class="navbar">
     <div class="navbar-top">
@@ -79,86 +78,97 @@ function buildHome() {
   let html = `<div class="container">
     <h1>Fixture Mundial 2026</h1>`;
   html += `<div class="info-banner">
-    <strong>💰 Puntajes:</strong> Partidos comunes: <span class="highlight">$500</span> — 3 pts exacto / 1 pt ganador.<br>
+    <strong>💰 Puntajes:</strong><br>
+    Partidos comunes: <span class="highlight">$500</span> — 3 pts exacto / 1 pt ganador.<br>
     Partidos 🔥 <strong>Destacados</strong>: <span class="highlight">$1.000</span> — 5 pts exacto / 2 pts ganador.<br>
     ⏰ Los pronósticos se cierran <strong>10 minutos antes</strong> del inicio de cada partido.<br>
-    🏆 <strong>Premios:</strong> 80% de la poza total de cada fecha se reparte entre los ganadores.
+    <strong style="font-size:1.05rem;display:block;margin-top:0.4rem">🏆 Premios estimados:</strong>
+    <span style="font-size:1.1rem;font-weight:700">F1: <span class="highlight">$${state.prizeData[1] || 0}</span> |
+    F2: <span class="highlight">$${state.prizeData[2] || 0}</span> |
+    F3: <span class="highlight">$${state.prizeData[3] || 0}</span></span>
   </div>`;
 
   const ms = state.matches;
   if (!ms.length) {
     html += `<div class="alert alert-info">Cargando partidos...</div>`;
   } else {
-    const groups = {};
+    const fechas = { 1: [], 2: [], 3: [], elim: [] };
     ms.forEach(m => {
-      if (m.stage === 'knockout') {
-        if (!groups['elim']) groups['elim'] = [];
-        groups['elim'].push(m);
-      } else {
-        const g = m.group || 'Sin grupo';
-        if (!groups[g]) groups[g] = [];
-        groups[g].push(m);
-      }
+      if (m.stage === 'knockout') fechas.elim.push(m);
+      else fechas[m.matchday].push(m);
     });
 
-    const groupKeys = Object.keys(groups).filter(k => k !== 'elim').sort();
-    groupKeys.forEach(key => {
-      html += buildGroupSection(key, groups[key]);
+    [1, 2, 3].forEach(f => {
+      const key = 'fecha_' + f;
+      const isOpen = state.collapsedGroups[key] === true;
+      html += `<div class="group-section">
+        <h2 class="group-title" style="cursor:pointer" data-action="toggle-group" data-key="${esc(key)}">
+          📅 Fecha ${f} <span style="float:right;font-size:0.85rem;color:#78909c">${isOpen ? '▲' : '▼'}</span>
+        </h2>`;
+      if (isOpen) {
+        fechas[f].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(m => { html += buildMatchCard(m); });
+      }
+      html += `</div>`;
     });
 
     // Eliminatorias
-    const elimMatches = groups['elim'] || [];
+    const elimMatches = fechas.elim;
     const allGroupsComplete = ms.filter(m => m.stage === 'group').every(m => m.homeScore != null);
     const isLocked = !allGroupsComplete || !ms.filter(m => m.stage === 'group').length;
+    const elimKey = 'fecha_elim';
+    const isElimOpen = state.collapsedGroups[elimKey] === true;
     html += `<div class="group-section">
-      <h2 class="group-title" style="color:#78909c">🏆 Eliminatorias ${isLocked ? '🔒' : ''}</h2>`;
-    if (isLocked) {
-      html += `<div style="padding:1rem;text-align:center;color:#546e7a;font-size:0.85rem">
-        <p>🔒 Bloqueado hasta que se carguen todos los resultados de la Fase de Grupos</p>
-      </div>`;
-      elimMatches.forEach(m => {
-        html += `<div class="match-card locked">
-          <div class="match-teams">${esc(m.homeTeam)} vs ${esc(m.awayTeam)}</div>
-          <div class="match-info">${esc(m.matchday)}</div>
-          <span class="locked-badge">🔒</span>
+      <h2 class="group-title" style="cursor:pointer" data-action="toggle-group" data-key="${esc(elimKey)}">
+        🏆 Eliminatorias ${isLocked ? '🔒' : ''} <span style="float:right;font-size:0.85rem;color:#78909c">${isElimOpen ? '▲' : '▼'}</span>
+      </h2>`;
+    if (isElimOpen) {
+      if (isLocked) {
+        html += `<div style="padding:1rem;text-align:center;color:#546e7a;font-size:0.85rem">
+          <p>🔒 Bloqueado hasta que se carguen todos los resultados de la Fase de Grupos</p>
         </div>`;
-      });
-    } else {
-      const elimGroups = {};
-      elimMatches.forEach(m => {
-        if (!elimGroups[m.matchday]) elimGroups[m.matchday] = [];
-        elimGroups[m.matchday].push(m);
-      });
-      ['R32','R16','QF','SF','3rd','Final'].forEach(key => {
-        if (elimGroups[key]) {
-          elimGroups[key].forEach(m => { html += buildMatchCard(m); });
-        }
-      });
+        elimMatches.forEach(m => {
+          const p = state.predictions[m.id];
+          const paidBadge = p?.paid
+            ? '<span style="color:#4caf50;font-size:0.7rem;margin-left:0.3rem">✅ Pagado</span>'
+            : '<span style="color:#ffd54f;font-size:0.7rem;margin-left:0.3rem">⏳ Pendiente</span>';
+          html += `<div class="match-card locked">
+            <div class="match-teams">${teamHTML(m.homeTeam)} vs ${teamHTML(m.awayTeam)}</div>
+            <div class="match-info">${formatDate(new Date(m.date))}</div>
+            <span class="locked-badge">🔒</span>
+            ${p ? `<div style="font-size:0.75rem;margin-top:0.2rem;text-align:center">${p.homeScore}-${p.awayScore} ${paidBadge}</div>` : ''}
+          </div>`;
+        });
+      } else {
+        const elimGroups = {};
+        elimMatches.forEach(m => {
+          if (!elimGroups[m.matchday]) elimGroups[m.matchday] = [];
+          elimGroups[m.matchday].push(m);
+        });
+        ['R32','R16','QF','SF','3rd','Final'].forEach(key => {
+          if (elimGroups[key]) {
+            elimGroups[key].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(m => { html += buildMatchCard(m); });
+          }
+        });
+      }
     }
     html += `</div>`;
   }
 
-  // Prize data
-  if (Object.keys(state.prizeData).length) {
-    html += `<div class="info-banner" style="margin-top:1rem">
-      <strong>🏆 Premios estimados:</strong> F1: <span class="highlight">$${state.prizeData[1]}</span> |
-      F2: <span class="highlight">$${state.prizeData[2]}</span> |
-      F3: <span class="highlight">$${state.prizeData[3]}</span>
-    </div>`;
+  // Payment banner
+  if (state.user) {
+    const unpaid = Object.values(state.predictions).filter(p => !p.paid);
+    if (unpaid.length) {
+      const total = unpaid.reduce((s, p) => {
+        const m = getMatchById(p.matchId);
+        return s + (m?.price || 500);
+      }, 0);
+      html += `<div class="pay-banner">
+        <div class="pay-banner-text">💳 Tenés <strong>$${total}</strong> para pagar (${unpaid.length} pronóstico${unpaid.length !== 1 ? 's' : ''})</div>
+        <button class="btn btn-success" data-action="pay">📲 Pagar via WhatsApp</button>
+      </div>`;
+    }
   }
 
-  html += `</div>`;
-  return html;
-}
-
-function buildGroupSection(key, matches) {
-  let html = `<div class="group-section">
-    <h2 class="group-title" style="cursor:pointer" data-action="toggle-group" data-key="${esc(key)}">
-      Grupo ${esc(key)} <span style="float:right;font-size:0.85rem;color:#78909c">${state.collapsedGroups[key] ? '▲' : '▼'}</span>
-    </h2>`;
-  if (state.collapsedGroups[key]) {
-    matches.forEach(m => { html += buildMatchCard(m); });
-  }
   html += `</div>`;
   return html;
 }
@@ -171,7 +181,7 @@ function buildMatchCard(m) {
   const matchDate = m.matchDate?.toDate ? m.matchDate.toDate() : new Date(m.date);
   const isLocked = (matchDate.getTime() - now.getTime()) < 10 * 60 * 1000;
 
-  let html = `<div class="match-card">`;
+  let html = `<div class="match-card${isLocked && !hasResult ? ' locked' : ''}${isFeatured ? ' featured' : ''}">`;
   html += `<div class="match-teams">
     ${teamHTML(m.homeTeam)}
     <span class="vs">vs</span>
@@ -189,17 +199,24 @@ function buildMatchCard(m) {
     }
   }
 
-  if (state.user && !hasResult && !isLocked) {
-    const hs = state.homeScores[m.id] || { home: '', away: '' };
-    html += `<div class="match-inputs">
-      <input type="number" min="0" max="20" data-action="home-score" data-match-id="${esc(m.id)}" value="${hs.home}" placeholder="0">
-      <span style="color:#546e7a">-</span>
-      <input type="number" min="0" max="20" data-action="away-score" data-match-id="${esc(m.id)}" value="${hs.away}" placeholder="0">
-      <button class="btn btn-primary btn-sm" data-action="save-prediction" data-match-id="${esc(m.id)}">Guardar</button>
-    </div>`;
-  } else if (pred && !hasResult) {
-    html += `<div class="match-pred">${pred.homeScore} - ${pred.awayScore}</div>`;
-    if (isLocked) html += `<span class="locked-badge">🔒</span>`;
+  if (state.user && !hasResult) {
+    if (!isLocked) {
+      const hs = state.homeScores[m.id] || { home: '', away: '' };
+      html += `<div class="match-inputs">
+        <input type="number" min="0" max="20" data-action="home-score" data-match-id="${esc(m.id)}" value="${hs.home}" placeholder="0">
+        <span style="color:#546e7a">-</span>
+        <input type="number" min="0" max="20" data-action="away-score" data-match-id="${esc(m.id)}" value="${hs.away}" placeholder="0">
+        <button class="btn btn-primary btn-sm" data-action="save-prediction" data-match-id="${esc(m.id)}">Guardar</button>
+      </div>`;
+    } else if (pred) {
+      const paidBadge = pred.paid
+        ? '<span style="color:#4caf50;font-size:0.75rem;margin-left:0.3rem">✅ Pagado</span>'
+        : '<span style="color:#ffd54f;font-size:0.75rem;margin-left:0.3rem">⏳ Pendiente</span>';
+      html += `<div class="match-pred">${pred.homeScore} - ${pred.awayScore} <span class="locked-badge">🔒</span></div>`;
+      html += `<div style="text-align:center;margin-top:0.3rem">${paidBadge}</div>`;
+    } else {
+      html += `<div style="text-align:center;padding:0.5rem;color:#546e7a;font-size:0.8rem">🔒 Sin pronóstico</div>`;
+    }
   }
 
   html += `</div>`;
@@ -224,9 +241,13 @@ function buildPronosticos() {
 
   const unpaid = preds.filter(p => !p.paid);
   if (unpaid.length) {
-    html += `<div style="margin-bottom:1rem">
-      <strong style="color:#ffd54f">${unpaid.length} pronóstico(s) sin pagar</strong>
-      <button class="btn btn-success btn-sm" style="margin-left:0.5rem" data-action="pay">Enviar por WhatsApp</button>
+    const total = unpaid.reduce((s, p) => {
+      const m = getMatchById(p.matchId);
+      return s + (m?.price || 500);
+    }, 0);
+    html += `<div class="pay-banner" style="margin-bottom:1rem">
+      <div class="pay-banner-text">💳 Tenés <strong>$${total}</strong> para pagar (${unpaid.length} pronóstico${unpaid.length !== 1 ? 's' : ''})</div>
+      <button class="btn btn-success" data-action="pay">📲 Pagar via WhatsApp</button>
     </div>`;
   }
 
@@ -302,7 +323,7 @@ function buildPosiciones() {
     const userPreds = state.allPredictions.filter(p => p.paid && p.userId === selUid);
     const sortedPreds = userPreds.map(p => ({ ...p, match: getMatchById(p.matchId) }))
       .filter(p => p.match)
-      .sort((a, b) => (a.match.matchDate?.toDate?.() || 0) - (b.match.matchDate?.toDate?.() || 0));
+      .sort((a, b) => new Date(a.match.date) - new Date(b.match.date));
     if (!sortedPreds.length) {
       html += `<div class="alert alert-info">${esc(selUser?.username || 'Usuario')} no tiene pronósticos pagos</div>`;
     } else {
@@ -361,7 +382,7 @@ function buildPosiciones() {
             if (exp) {
               const preds = state.allPredictions.filter(p => p.paid && p.userId === u.id && cat.matchdays.includes(p.matchday));
               const sorted = preds.map(p => getMatchById(p.matchId)).filter(Boolean)
-                .sort((a, b) => (a.matchDate?.toDate?.() || 0) - (b.matchDate?.toDate?.() || 0));
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
               html += `<div style="padding:0.5rem;overflow-x:auto">`;
               if (!sorted.length) {
                 html += `<div style="color:#78909c;font-size:0.8rem;text-align:center;padding:0.5rem">Sin pronósticos pagos en esta fecha</div>`;
@@ -490,9 +511,9 @@ function buildAdminResultados() {
         html += `<div class="match-card">
           <div class="match-teams">${teamHTML(m.homeTeam)} vs ${teamHTML(m.awayTeam)} ${m.featured ? '<span class="featured-badge">🔥</span>' : ''}</div>
           <div class="match-inputs">
-            <input type="number" min="0" max="20" data-action="admin-score-home" data-match-id="${esc(m.id)}" value="${s.home}" placeholder="0" style="width:36px">
-            <span style="color:#546e7a">-</span>
-            <input type="number" min="0" max="20" data-action="admin-score-away" data-match-id="${esc(m.id)}" value="${s.away}" placeholder="0" style="width:36px">
+            <input type="number" min="0" max="20" data-action="admin-score-home" data-match-id="${esc(m.id)}" value="${s.home}" placeholder="0" style="width:54px;padding:0.45rem 0.5rem;font-size:1rem">
+            <span style="color:#546e7a;font-size:1rem">-</span>
+            <input type="number" min="0" max="20" data-action="admin-score-away" data-match-id="${esc(m.id)}" value="${s.away}" placeholder="0" style="width:54px;padding:0.45rem 0.5rem;font-size:1rem">
             <button class="btn btn-primary btn-sm" data-action="save-result" data-match-id="${esc(m.id)}">Guardar</button>
           </div>
         </div>`;
@@ -563,11 +584,4 @@ function buildAdminHistorial() {
   return html;
 }
 
-function buildSeed() {
-  return `<div class="container">
-    <h1>⚙️ Seed Data</h1>
-    <p style="margin-bottom:1rem;color:#78909c;font-size:0.85rem">Cargá los 104 partidos en Firestore.</p>
-    <button class="btn btn-primary" data-action="seed">Cargar partidos</button>
-    <button class="btn btn-primary" style="margin-left:0.5rem" data-action="patch-featured">Sincronizar destacados</button>
-  </div>`;
-}
+
