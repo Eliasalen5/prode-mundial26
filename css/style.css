@@ -250,7 +250,15 @@ td, th { padding: 0.4rem; text-align: left; border-bottom: 1px solid #1a2a3e; }
 
 /* Mobile */
 @media (max-width: 600px) {
-  .navbar-links a { font-size: 0.72rem; padding: 0.3rem 0.45rem; }
+  .navbar-links {
+    justify-content: flex-start;
+    gap: 0.1rem;
+    padding: 0 0.3rem 0.3rem;
+  }
+  .navbar-links a { font-size: 0.7rem; padding: 0.25rem 0.35rem; }
+  .navbar-top { padding: 0.5rem 0.7rem; }
+  .navbar-top .navbar-user { right: 0.7rem; font-size: 0.78rem; }
+  .navbar-brand { font-size: 0.95rem; }
   .match-card { flex-direction: column; align-items: stretch; padding: 0.6rem 0.7rem; gap: 0.3rem; }
   .match-teams { min-width: unset; font-size: 0.82rem; text-align: center; }
   .match-info { text-align: center; }
