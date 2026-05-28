@@ -201,12 +201,13 @@ function buildMatchCard(m) {
 
   if (state.user && !hasResult) {
     if (!isLocked) {
-      const hs = state.homeScores[m.id] || { home: '', away: '' };
+      const hs = state.homeScores[m.id] || (pred ? { home: pred.homeScore, away: pred.awayScore } : { home: '', away: '' });
+      const btnLabel = pred?.paid ? 'Modificar' : 'Guardar';
       html += `<div class="match-inputs">
         <input type="number" min="0" max="20" data-action="home-score" data-match-id="${esc(m.id)}" value="${hs.home}" placeholder="0">
         <span style="color:#546e7a">-</span>
         <input type="number" min="0" max="20" data-action="away-score" data-match-id="${esc(m.id)}" value="${hs.away}" placeholder="0">
-        <button class="btn btn-primary btn-sm" data-action="save-prediction" data-match-id="${esc(m.id)}">Guardar</button>
+        <button class="btn btn-primary btn-sm" data-action="save-prediction" data-match-id="${esc(m.id)}">${btnLabel}</button>
       </div>`;
     } else if (pred) {
       const paidBadge = pred.paid
@@ -526,6 +527,7 @@ function buildAdminResultados() {
         html += `<div class="match-card">
           <div class="match-teams">${teamHTML(m.homeTeam)} vs ${teamHTML(m.awayTeam)}</div>
           <div class="match-score">${m.homeScore} - ${m.awayScore}</div>
+          <button class="btn btn-danger btn-sm" data-action="clear-result" data-match-id="${esc(m.id)}">🗑️ Limpiar</button>
         </div>`;
       });
     }

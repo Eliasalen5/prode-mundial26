@@ -196,32 +196,66 @@ async function handleConfirmPay(predId) {
   render();
 }
 
+async function handleClearResult(matchId) {
+  if (!confirm('¿Eliminar resultado y resetear puntos de este partido?')) return;
+  await db.collection('matches').doc(matchId).update({
+    homeScore: null,
+    awayScore: null,
+    status: 'locked',
+  });
+  const predSnap = await db.collection('predictions').where('matchId', '==', matchId).get();
+  const batch = db.batch();
+  predSnap.docs.forEach(d => {
+    batch.update(d.ref, { points: 0, status: 'pending' });
+  });
+  await batch.commit();
+  const idx = state.matches.findIndex(m => m.id === matchId);
+  if (idx !== -1) {
+    state.matches[idx].homeScore = null;
+    state.matches[idx].awayScore = null;
+    state.matches[idx].status = 'locked';
+  }
+  showToast('🧹 Resultado limpiado');
+  render();
+}
+
 async function handleSaveResult(matchId) {
   const s = state.adminScores[matchId];
   if (!s || s.home === '' || s.away === '') return;
-  await db.collection('matches').doc(matchId).set({
-    homeScore: Number(s.home),
-    awayScore: Number(s.away),
-    status: 'played',
-  }, { merge: true });
-  const match = getMatchById(matchId);
-  const isFeatured = match?.featured;
-  const exactPts = isFeatured ? 5 : 3;
-  const winnerPts = isFeatured ? 2 : 1;
-  const predSnap = await db.collection('predictions').get();
-  const batch = db.batch();
-  predSnap.docs.forEach(d => {
-    const p = d.data();
-    if (p.matchId !== matchId || !p.paid) return;
-    let pts = 0;
-    if (p.homeScore === Number(s.home) && p.awayScore === Number(s.away)) {
-      pts = exactPts;
-    } else if (Math.sign(p.homeScore - p.awayScore) === Math.sign(Number(s.home) - Number(s.away))) {
-      pts = winnerPts;
+  try {
+    await db.collection('matches').doc(matchId).set({
+      homeScore: Number(s.home),
+      awayScore: Number(s.away),
+      status: 'played',
+    }, { merge: true });
+    const idx = state.matches.findIndex(m => m.id === matchId);
+    if (idx !== -1) {
+      state.matches[idx].homeScore = Number(s.home);
+      state.matches[idx].awayScore = Number(s.away);
+      state.matches[idx].status = 'played';
     }
-    batch.update(db.collection('predictions').doc(d.id), { points: pts, status: 'scored' });
-  });
-  await batch.commit();
+    const match = getMatchById(matchId);
+    const isFeatured = match?.featured;
+    const exactPts = isFeatured ? 5 : 3;
+    const winnerPts = isFeatured ? 2 : 1;
+    const predSnap = await db.collection('predictions').get();
+    const batch = db.batch();
+    predSnap.docs.forEach(d => {
+      const p = d.data();
+      if (p.matchId !== matchId || !p.paid) return;
+      let pts = 0;
+      if (p.homeScore === Number(s.home) && p.awayScore === Number(s.away)) {
+        pts = exactPts;
+      } else if (Math.sign(p.homeScore - p.awayScore) === Math.sign(Number(s.home) - Number(s.away))) {
+        pts = winnerPts;
+      }
+      batch.update(db.collection('predictions').doc(d.id), { points: pts, status: 'scored' });
+    });
+    await batch.commit();
+    render();
+  } catch (e) {
+    showToast('❌ Error al guardar: ' + e.message);
+  }
 }
 
 function showToast(msg) {
@@ -251,7 +285,8 @@ document.getElementById('root').addEventListener('click', (e) => {
   else if (action === 'save-prediction') handleSavePrediction(e.target.dataset.matchId);
   else if (action === 'confirm-pay') handleConfirmPay(e.target.dataset.predId);
   else if (action === 'save-result') handleSaveResult(e.target.dataset.matchId);
-   else if (action === 'mark-all-notif-read') {
+  else if (action === 'clear-result') handleClearResult(e.target.dataset.matchId);
+  else if (action === 'mark-all-notif-read') {
     state.notifications.filter(n => !n.read).forEach(n => {
       db.collection('notifications').doc(n.id).update({ read: true });
     });
