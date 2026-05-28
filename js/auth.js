@@ -40,5 +40,5 @@ function handleRegister(username, email, password, phone) {
 }
 
 function handleLogout() {
-  auth.signOut().then(() => navigate('/login'));
+  auth.signOut().then(() => navigate('/login')).catch(() => {});
 }

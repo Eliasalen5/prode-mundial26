@@ -74,8 +74,8 @@ function render() {
   // Admin historial
   if (page === '/admin/historial' && !unsubPagos) {
     loadCachedUsers();
-    unsubPagos = db.collection('predictions').onSnapshot((snap) => {
-      state.paidHistory = snap.docs.filter(d => d.data().paid).map(d => ({ id: d.id, ...d.data() }));
+    unsubPagos = db.collection('predictions').where('paid', '==', true).onSnapshot((snap) => {
+      state.paidHistory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       render();
     });
   }

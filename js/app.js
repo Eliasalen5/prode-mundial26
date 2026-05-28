@@ -43,7 +43,7 @@ function loadCachedUsers() {
       state.usersMap = {};
       snap.docs.forEach(d => { state.usersMap[d.id] = d.data().username; });
       _cachedUsersMap = Object.assign({}, state.usersMap);
-    });
+    }).catch(() => {});
   }
 }
 
@@ -51,44 +51,48 @@ function loadCachedUsers() {
 // LEADERBOARD
 // ============================================================
 async function rebuildLeaderboard(predSnap) {
-  if (!_cachedUsersMap) {
-    const usersSnap = await db.collection('users').get();
-    _cachedUsersMap = {};
-    usersSnap.docs.forEach(d => { _cachedUsersMap[d.id] = d.data().username || d.id.slice(0,8); });
-  }
-  const usersMap = _cachedUsersMap;
-  if (!predSnap) {
-    predSnap = await db.collection('predictions').get();
-  }
+  try {
+    if (!_cachedUsersMap) {
+      const usersSnap = await db.collection('users').get();
+      _cachedUsersMap = {};
+      usersSnap.docs.forEach(d => { _cachedUsersMap[d.id] = d.data().username || d.id.slice(0,8); });
+    }
+    const usersMap = _cachedUsersMap;
+    if (!predSnap) {
+      predSnap = await db.collection('predictions').get();
+    }
 
-  state.allPredictions = [];
-  predSnap.docs.forEach(d => {
-    const p = d.data();
-    const m = getMatchById(p.matchId);
-    state.allPredictions.push({ id: d.id, ...p, matchday: m?.matchday });
-  });
-
-  const categories = [
-    { key: '1', label: '📅 Fecha 1', matchdays: [1] },
-    { key: '2', label: '📅 Fecha 2', matchdays: [2] },
-    { key: '3', label: '📅 Fecha 3', matchdays: [3] },
-    { key: 'elim', label: '🏆 Eliminatorias', matchdays: ['R32','R16','QF','SF','3rd','Final'] },
-  ];
-
-  state.leaderboardMD = categories.map(cat => {
-    const catPoints = {};
-    state.allPredictions.forEach(p => {
-      if (!p.paid) return;
-      if (!cat.matchdays.includes(p.matchday)) return;
-      catPoints[p.userId] = (catPoints[p.userId] || 0) + (p.points || 0);
+    state.allPredictions = [];
+    predSnap.docs.forEach(d => {
+      const p = d.data();
+      const m = getMatchById(p.matchId);
+      state.allPredictions.push({ id: d.id, ...p, matchday: m?.matchday });
     });
-    const catUsers = Object.keys(catPoints).map(uid => ({
-      id: uid,
-      username: usersMap[uid],
-      points: catPoints[uid],
-    })).sort((a, b) => b.points - a.points);
-    return { key: cat.key, label: cat.label, matchdays: cat.matchdays, users: catUsers };
-  });
+
+    const categories = [
+      { key: '1', label: '📅 Fecha 1', matchdays: [1] },
+      { key: '2', label: '📅 Fecha 2', matchdays: [2] },
+      { key: '3', label: '📅 Fecha 3', matchdays: [3] },
+      { key: 'elim', label: '🏆 Eliminatorias', matchdays: ['R32','R16','QF','SF','3rd','Final'] },
+    ];
+
+    state.leaderboardMD = categories.map(cat => {
+      const catPoints = {};
+      state.allPredictions.forEach(p => {
+        if (!p.paid) return;
+        if (!cat.matchdays.includes(p.matchday)) return;
+        catPoints[p.userId] = (catPoints[p.userId] || 0) + (p.points || 0);
+      });
+      const catUsers = Object.keys(catPoints).map(uid => ({
+        id: uid,
+        username: usersMap[uid],
+        points: catPoints[uid],
+      })).sort((a, b) => b.points - a.points);
+      return { key: cat.key, label: cat.label, matchdays: cat.matchdays, users: catUsers };
+    });
+  } catch (e) {
+    showToast('❌ Error al cargar posiciones');
+  }
 }
 
 function toggleLbSection(key) {
@@ -100,9 +104,13 @@ function toggleLbSection(key) {
 // DATA LOADERS
 // ============================================================
 async function loadPredictionsForUser(uid) {
-  const snap = await db.collection('predictions').where('userId', '==', uid).get();
-  state.predictions = {};
-  snap.docs.forEach(d => { state.predictions[d.data().matchId] = { id: d.id, ...d.data() }; });
+  try {
+    const snap = await db.collection('predictions').where('userId', '==', uid).get();
+    state.predictions = {};
+    snap.docs.forEach(d => { state.predictions[d.data().matchId] = { id: d.id, ...d.data() }; });
+  } catch (e) {
+    showToast('❌ Error al cargar tus pronósticos');
+  }
 }
 
 async function loadPrizeData() {
@@ -181,42 +189,50 @@ async function handleSavePrediction(matchId) {
 }
 
 async function handleConfirmPay(predId) {
-  const predSnap = await db.collection('predictions').doc(predId).get();
-  const pred = predSnap.data();
-  const match = getMatchById(pred.matchId);
-  const matchName = match ? `${match.homeTeam} vs ${match.awayTeam}` : pred.matchId;
-  await db.collection('predictions').doc(predId).update({ paid: true, status: 'unlocked' });
-  await db.collection('notifications').add({
-    userId: pred.userId,
-    message: `Tu pago para ${matchName} fue confirmado.`,
-    read: false,
-    createdAt: new Date(),
-  });
-  showToast('Pago confirmado');
-  render();
+  try {
+    const predSnap = await db.collection('predictions').doc(predId).get();
+    const pred = predSnap.data();
+    const match = getMatchById(pred.matchId);
+    const matchName = match ? `${match.homeTeam} vs ${match.awayTeam}` : pred.matchId;
+    await db.collection('predictions').doc(predId).update({ paid: true, status: 'unlocked' });
+    await db.collection('notifications').add({
+      userId: pred.userId,
+      message: `Tu pago para ${matchName} fue confirmado.`,
+      read: false,
+      createdAt: new Date(),
+    });
+    showToast('Pago confirmado');
+    render();
+  } catch (e) {
+    showToast('❌ Ocurrió un error, avisale a Elias');
+  }
 }
 
 async function handleClearResult(matchId) {
   if (!confirm('¿Eliminar resultado y resetear puntos de este partido?')) return;
-  await db.collection('matches').doc(matchId).update({
-    homeScore: null,
-    awayScore: null,
-    status: 'locked',
-  });
-  const predSnap = await db.collection('predictions').where('matchId', '==', matchId).get();
-  const batch = db.batch();
-  predSnap.docs.forEach(d => {
-    batch.update(d.ref, { points: 0, status: 'pending' });
-  });
-  await batch.commit();
-  const idx = state.matches.findIndex(m => m.id === matchId);
-  if (idx !== -1) {
-    state.matches[idx].homeScore = null;
-    state.matches[idx].awayScore = null;
-    state.matches[idx].status = 'locked';
+  try {
+    await db.collection('matches').doc(matchId).update({
+      homeScore: null,
+      awayScore: null,
+      status: 'locked',
+    });
+    const predSnap = await db.collection('predictions').where('matchId', '==', matchId).get();
+    const batch = db.batch();
+    predSnap.docs.forEach(d => {
+      batch.update(d.ref, { points: 0, status: 'pending' });
+    });
+    await batch.commit();
+    const idx = state.matches.findIndex(m => m.id === matchId);
+    if (idx !== -1) {
+      state.matches[idx].homeScore = null;
+      state.matches[idx].awayScore = null;
+      state.matches[idx].status = 'locked';
+    }
+    showToast('🧹 Resultado limpiado');
+    render();
+  } catch (e) {
+    showToast('❌ Ocurrió un error, avisale a Elias');
   }
-  showToast('🧹 Resultado limpiado');
-  render();
 }
 
 async function handleSaveResult(matchId) {
