@@ -238,11 +238,10 @@ async function handleSaveResult(matchId) {
     const isFeatured = match?.featured;
     const exactPts = isFeatured ? 5 : 3;
     const winnerPts = isFeatured ? 2 : 1;
-    const predSnap = await db.collection('predictions').get();
+    const predSnap = await db.collection('predictions').where('matchId', '==', matchId).where('paid', '==', true).get();
     const batch = db.batch();
     predSnap.docs.forEach(d => {
       const p = d.data();
-      if (p.matchId !== matchId || !p.paid) return;
       let pts = 0;
       if (p.homeScore === Number(s.home) && p.awayScore === Number(s.away)) {
         pts = exactPts;
