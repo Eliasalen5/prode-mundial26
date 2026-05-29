@@ -10,7 +10,7 @@ const state = {
   expandedUser: null,
   leaderboardMD: [],
   expandedLbKey: '',
-  collapsedGroups: { fecha_1: true, fecha_2: true, fecha_3: true, fecha_elim: true },
+  collapsedGroups: { fecha_1: false, fecha_2: false, fecha_3: false, fecha_elim: false },
   pendingPagos: [],
   paidHistory: [],
   usersMap: {},
