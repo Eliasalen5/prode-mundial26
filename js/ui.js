@@ -98,7 +98,7 @@ function buildHome() {
       }, 0);
       html += `<div class="pay-banner pay-banner-fixed">
         <div class="pay-banner-text">💳 Tenés <strong>$${total}</strong> para pagar (${unpaid.length} pronóstico${unpaid.length !== 1 ? 's' : ''})</div>
-        <button class="btn btn-success" data-action="pay">📲 Mandá WPP para pagar</button>
+        <button class="btn btn-success" data-action="pay">📲 Avisá por WhatsApp para pagar</button>
       </div>`;
     }
   }
@@ -248,7 +248,7 @@ function buildPronosticos() {
     }, 0);
     html += `<div class="pay-banner pay-banner-fixed">
       <div class="pay-banner-text">💳 Tenés <strong>$${total}</strong> para pagar (${unpaid.length} pronóstico${unpaid.length !== 1 ? 's' : ''})</div>
-      <button class="btn btn-success" data-action="pay">📲 Mandá WPP para pagar</button>
+      <button class="btn btn-success" data-action="pay">📲 Avisá por WhatsApp para pagar</button>
     </div>`;
   }
 
