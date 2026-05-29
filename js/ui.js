@@ -375,8 +375,9 @@ function buildPosiciones() {
           cat.users.forEach((u, i) => {
             const lbKey = cat.key + '_' + u.id;
             const exp = state.expandedLbKey === lbKey;
+            const medals = ['🥇', '🥈', '🥉'];
             html += `<div class="leaderboard-row" style="cursor:pointer" data-action="toggle-lb-user" data-lb-key="${esc(lbKey)}">
-              <span class="lb-pos">#${i+1}</span>
+              <span class="lb-pos">${i < 3 ? medals[i] : '#' + (i+1)}</span>
               <span class="lb-name">${esc(u.username)}</span>
               <span class="lb-pts">${u.points} pts</span>
               <span style="color:#78909c;font-size:0.8rem">${exp ? '▲' : '▼'}</span>
