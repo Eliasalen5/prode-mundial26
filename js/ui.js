@@ -88,6 +88,21 @@ function buildHome() {
     F3: <span class="highlight">$${state.prizeData[3] || 0}</span></span>
   </div>`;
 
+  // Payment banner (top)
+  if (state.user) {
+    const unpaid = Object.values(state.predictions).filter(p => !p.paid);
+    if (unpaid.length) {
+      const total = unpaid.reduce((s, p) => {
+        const m = getMatchById(p.matchId);
+        return s + (m?.price || 500);
+      }, 0);
+      html += `<div class="pay-banner" style="margin-bottom:1rem">
+        <div class="pay-banner-text">💳 Tenés <strong>$${total}</strong> para pagar (${unpaid.length} pronóstico${unpaid.length !== 1 ? 's' : ''})</div>
+        <button class="btn btn-success" data-action="pay">📲 Pagar via WhatsApp</button>
+      </div>`;
+    }
+  }
+
   const ms = state.matches;
   if (!ms.length) {
     html += `<div class="alert alert-info">Cargando partidos...</div>`;
@@ -152,21 +167,6 @@ function buildHome() {
       }
     }
     html += `</div>`;
-  }
-
-  // Payment banner
-  if (state.user) {
-    const unpaid = Object.values(state.predictions).filter(p => !p.paid);
-    if (unpaid.length) {
-      const total = unpaid.reduce((s, p) => {
-        const m = getMatchById(p.matchId);
-        return s + (m?.price || 500);
-      }, 0);
-      html += `<div class="pay-banner">
-        <div class="pay-banner-text">💳 Tenés <strong>$${total}</strong> para pagar (${unpaid.length} pronóstico${unpaid.length !== 1 ? 's' : ''})</div>
-        <button class="btn btn-success" data-action="pay">📲 Pagar via WhatsApp</button>
-      </div>`;
-    }
   }
 
   html += `</div>`;
