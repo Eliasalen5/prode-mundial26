@@ -79,8 +79,8 @@ function buildHome() {
     <h1>Fixture Mundial 2026</h1>`;
   html += `<div class="info-banner">
     <strong>💰 Puntajes:</strong><br>
-    Partidos comunes: <span class="highlight">$500</span> — 3 pts exacto / 1 pt ganador.<br>
-    Partidos <strong>Destacados</strong> 🔥: <span class="highlight">$1.000</span> — 5 pts exacto / 2 pts ganador.<br>
+    Partidos comunes: <span class="highlight">$500</span> — 3 pts resultado exacto / 1 pt ganador o empate.<br>
+    Partidos <strong>Destacados</strong> 🔥: <span class="highlight">$1.000</span> — 5 pts resultado exacto / 2 pts ganador o empate.<br>
     ⏰ Los pronósticos se cierran <strong>10 minutos antes</strong> del inicio de cada partido.<br>
     <strong style="font-size:1.05rem;display:block;margin-top:0.4rem">🏆 Premios estimados:</strong>
     <span style="font-size:1.1rem;font-weight:700">F1: <span class="highlight">$${state.prizeData[1] || 0}</span> |
