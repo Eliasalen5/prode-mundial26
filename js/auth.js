@@ -35,16 +35,19 @@ function handleRegister(nombre, apellido, email, password, phone) {
       });
     })
     .then(() => {
-      db.collection('users').where('role', '==', 'admin').get().then(snap => {
-        snap.docs.forEach(adminDoc => {
-          db.collection('notifications').add({
-            userId: adminDoc.id,
-            message: `Nuevo usuario registrado: ${username}`,
-            read: false,
-            createdAt: new Date(),
-          });
-        });
+      return db.collection('users').where('role', '==', 'admin').get();
+    })
+    .then(snap => {
+      const promises = [];
+      snap.docs.forEach(adminDoc => {
+        promises.push(db.collection('notifications').add({
+          userId: adminDoc.id,
+          message: `Nuevo usuario registrado: ${username}`,
+          read: false,
+          createdAt: new Date(),
+        }));
       });
+      return Promise.all(promises);
     })
     .catch(err => {
       state.error = err.code === 'auth/email-already-in-use' ? 'El email ya está registrado' : err.message;
