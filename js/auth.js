@@ -25,12 +25,25 @@ function handleLogin(email, password) {
     });
 }
 
-function handleRegister(username, email, password, phone) {
+function handleRegister(nombre, apellido, email, password, phone) {
   state.error = '';
+  const username = (nombre + ' ' + apellido).trim();
   auth.createUserWithEmailAndPassword(email, password)
     .then(cred => {
       return db.collection('users').doc(cred.user.uid).set({
-        username, email, phone, role: 'user', createdAt: new Date()
+        nombre, apellido, username, email, phone, role: 'user', createdAt: new Date()
+      });
+    })
+    .then(() => {
+      db.collection('users').where('role', '==', 'admin').get().then(snap => {
+        snap.docs.forEach(adminDoc => {
+          db.collection('notifications').add({
+            userId: adminDoc.id,
+            message: `Nuevo usuario registrado: ${username}`,
+            read: false,
+            createdAt: new Date(),
+          });
+        });
       });
     })
     .catch(err => {

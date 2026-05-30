@@ -53,8 +53,12 @@ function buildRegister() {
     ${state.error ? `<div class="alert alert-warning">${esc(state.error)}</div>` : ''}
     <form id="form-register">
       <div class="form-group">
-        <label>Nombre de usuario</label>
-        <input type="text" id="reg-username" required placeholder="Juan Pérez">
+        <label>Nombre</label>
+        <input type="text" id="reg-nombre" required placeholder="Juan">
+      </div>
+      <div class="form-group">
+        <label>Apellido</label>
+        <input type="text" id="reg-apellido" required placeholder="Pérez">
       </div>
       <div class="form-group">
         <label>Email</label>

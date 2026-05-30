@@ -340,7 +340,8 @@ document.getElementById('root').addEventListener('submit', (e) => {
   if (e.target.id === 'form-register') {
     e.preventDefault();
     handleRegister(
-      document.getElementById('reg-username').value,
+      document.getElementById('reg-nombre').value,
+      document.getElementById('reg-apellido').value,
       document.getElementById('reg-email').value,
       document.getElementById('reg-pass').value,
       document.getElementById('reg-phone').value
