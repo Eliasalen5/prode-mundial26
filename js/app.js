@@ -126,9 +126,9 @@ async function loadPrizeData() {
       }
     });
     state.prizeData = {
-      1: Math.round(totals[1] * 0.8),
-      2: Math.round(totals[2] * 0.8),
-      3: Math.round(totals[3] * 0.8),
+      1: Math.round(totals[1] * 0.9),
+      2: Math.round(totals[2] * 0.9),
+      3: Math.round(totals[3] * 0.9),
     };
     render();
   } catch (_) {}
