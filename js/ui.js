@@ -449,6 +449,7 @@ function buildAdminPagos() {
 
   const grouped = {};
   state.pendingPagos.forEach(p => {
+    if (!state.usersMap[p.userId]) return;
     if (!grouped[p.userId]) grouped[p.userId] = [];
     grouped[p.userId].push(p);
   });
@@ -537,6 +538,10 @@ function buildAdminResultados() {
       });
     }
   }
+  html += `<div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #1e3a4a">
+    <button class="btn btn-danger btn-sm" data-action="clean-orphans">🧹 Limpiar predicciones huérfanas</button>
+    <span style="color:#78909c;font-size:0.75rem;margin-left:0.5rem">Elimina pronósticos de usuarios eliminados</span>
+  </div>`;
   html += `</div>`;
   return html;
 }
@@ -546,6 +551,7 @@ function buildAdminHistorial() {
 
   const grouped = {};
   state.paidHistory.forEach(p => {
+    if (!state.usersMap[p.userId]) return;
     if (!grouped[p.userId]) grouped[p.userId] = [];
     grouped[p.userId].push(p);
   });

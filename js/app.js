@@ -83,7 +83,7 @@ async function rebuildLeaderboard(predSnap) {
         if (!cat.matchdays.includes(p.matchday)) return;
         catPoints[p.userId] = (catPoints[p.userId] || 0) + (p.points || 0);
       });
-      const catUsers = Object.keys(catPoints).map(uid => ({
+      const catUsers = Object.keys(catPoints).filter(uid => usersMap[uid]).map(uid => ({
         id: uid,
         username: usersMap[uid],
         points: catPoints[uid],
@@ -235,6 +235,34 @@ async function handleClearResult(matchId) {
   }
 }
 
+async function handleCleanOrphanedPredictions() {
+  try {
+    const usersSnap = await db.collection('users').get();
+    const validIds = new Set();
+    usersSnap.docs.forEach(d => validIds.add(d.id));
+    const predSnap = await db.collection('predictions').get();
+    const batch = db.batch();
+    let count = 0;
+    predSnap.docs.forEach(d => {
+      if (!validIds.has(d.data().userId)) {
+        batch.delete(d.ref);
+        count++;
+      }
+    });
+    if (count === 0) {
+      showToast('✅ No hay predicciones huérfanas');
+      return;
+    }
+    await batch.commit();
+    _cachedUsersMap = null;
+    state.usersMap = {};
+    showToast(`🧹 Eliminadas ${count} predicciones de usuarios eliminados`);
+    render();
+  } catch (e) {
+    showToast('❌ Error: ' + e.message);
+  }
+}
+
 async function handleSaveResult(matchId) {
   const s = state.adminScores[matchId];
   if (!s || s.home === '' || s.away === '') return;
@@ -301,6 +329,11 @@ document.getElementById('root').addEventListener('click', (e) => {
   else if (action === 'confirm-pay') handleConfirmPay(e.target.dataset.predId);
   else if (action === 'save-result') handleSaveResult(e.target.dataset.matchId);
   else if (action === 'clear-result') handleClearResult(e.target.dataset.matchId);
+  else if (action === 'clean-orphans') {
+    if (confirm('¿Eliminar todos los pronósticos de usuarios que ya no existen?')) {
+      handleCleanOrphanedPredictions();
+    }
+  }
   else if (action === 'mark-all-notif-read') {
     state.notifications.filter(n => !n.read).forEach(n => {
       db.collection('notifications').doc(n.id).update({ read: true });
