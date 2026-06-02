@@ -77,7 +77,7 @@ async function rebuildLeaderboard(predSnap) {
       { key: '1', label: '📅 Fecha 1', matchdays: [1] },
       { key: '2', label: '📅 Fecha 2', matchdays: [2] },
       { key: '3', label: '📅 Fecha 3', matchdays: [3] },
-      { key: 'elim', label: '🏆 Eliminatorias', matchdays: ['R32','R16','QF','SF','3rd','Final'] },
+      { key: 'elim', label: '🏆 Eliminatorias', matchdays: ['16avos','8avos','Cuartos','Semis','3er puesto','Final'] },
     ];
 
     state.leaderboardMD = categories.map(cat => {

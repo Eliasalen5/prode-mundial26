@@ -140,7 +140,7 @@ function buildHome() {
 
     // Info banner Eliminatorias
     html += `<div class="info-banner" style="margin:1rem 0">
-      <strong>🏆 Eliminatorias:</strong> Pase Único de <strong>$${state.eliminatoriasPrice.toLocaleString()}</strong> para pronosticar TODOS los partidos (R32 → Final).<br>
+      <strong>🏆 Eliminatorias:</strong> Pase Único de <strong>$${state.eliminatoriasPrice.toLocaleString()}</strong> para pronosticar TODOS los partidos (16avos → Final).<br>
       Rigen las mismas reglas de puntaje. Solo cuenta el <strong>resultado de los 90'</strong> (alargue y penales no suman puntos).
     </div>`;
 
@@ -177,7 +177,7 @@ function buildHome() {
           if (!elimGroups[m.matchday]) elimGroups[m.matchday] = [];
           elimGroups[m.matchday].push(m);
         });
-        ['R32','R16','QF','SF','3rd','Final'].forEach(key => {
+        ['16avos','8avos','Cuartos','Semis','3er puesto','Final'].forEach(key => {
           if (elimGroups[key]) {
             elimGroups[key].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(m => { html += buildMatchCard(m); });
           }
