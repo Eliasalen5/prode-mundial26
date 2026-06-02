@@ -87,7 +87,7 @@ function buildHome() {
     Partidos <strong>Destacados</strong> 🔥: <span class="highlight">$1.000</span> — 5 pts resultado exacto / 2 pts ganador o empate.<br>
     ⏰ Los pronósticos se cierran <strong>10 minutos antes</strong> del inicio de cada partido.<br>
     <div style="margin-top:0.4rem;font-size:1.05rem">🏆 <strong>Premio estimado</strong>: 1 ganador por fecha</div>
-    <div style="font-size:1.1rem;font-weight:700;display:flex;flex-wrap:wrap;gap:0.3rem 0.8rem;justify-content:center">
+    <div class="prize-row" style="font-size:1.1rem;font-weight:700;display:flex;flex-wrap:wrap;gap:0.3rem 0.8rem;justify-content:center">
       <span>🥇 F1: <span class="highlight">$${state.prizeData[1] || 0}</span></span>
       <span>🥇 F2: <span class="highlight">$${state.prizeData[2] || 0}</span></span>
       <span>🥇 F3: <span class="highlight">$${state.prizeData[3] || 0}</span></span>
