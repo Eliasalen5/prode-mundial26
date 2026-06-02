@@ -86,7 +86,7 @@ function buildHome() {
     Partidos comunes: <span class="highlight">$500</span> — 3 pts resultado exacto / 1 pt ganador o empate.<br>
     Partidos <strong>Destacados</strong> 🔥: <span class="highlight">$1.000</span> — 5 pts resultado exacto / 2 pts ganador o empate.<br>
     ⏰ Los pronósticos se cierran <strong>10 minutos antes</strong> del inicio de cada partido.<br>
-    <div style="margin-top:0.4rem;font-size:1.05rem">🏆 <strong>Premios estimados</strong>: 3 ganadores por fecha</div>
+    <div style="margin-top:0.4rem;font-size:1.05rem">🏆 <strong>Premio estimado</strong>: 1 ganador por fecha</div>
     <span style="font-size:1.1rem;font-weight:700">F1: <span class="highlight">$${state.prizeData[1] || 0}</span> |
     F2: <span class="highlight">$${state.prizeData[2] || 0}</span> |
     F3: <span class="highlight">$${state.prizeData[3] || 0}</span></span>
@@ -378,9 +378,9 @@ function buildPosiciones() {
           cat.users.forEach((u, i) => {
             const lbKey = cat.key + '_' + u.id;
             const exp = state.expandedLbKey === lbKey;
-            const medals = ['🥇', '🥈', '🥉'];
-            html += `<div class="leaderboard-row" style="cursor:pointer" data-action="toggle-lb-user" data-lb-key="${esc(lbKey)}">
-              <span class="lb-pos">${i < 3 ? medals[i] : '#' + (i+1)}</span>
+            const medals = ['🥇'];
+
+              <span class="lb-pos">${i < 1 ? medals[i] : '#' + (i+1)}</span>
               <span class="lb-name">${esc(u.username)}</span>
               <span class="lb-pts">${u.points} pts</span>
               <span style="color:#78909c;font-size:0.8rem">${exp ? '▲' : '▼'}</span>
