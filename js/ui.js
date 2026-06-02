@@ -94,11 +94,11 @@ function buildHome() {
 
   // Payment banner (top)
   if (state.user) {
-    const unpaid = Object.values(state.predictions).filter(p => !p.paid);
+    const unpaid = Object.values(state.predictions).filter(p => p.paid !== true);
     if (unpaid.length) {
       const total = unpaid.reduce((s, p) => {
         const m = getMatchById(p.matchId);
-        return s + (m?.price || 500);
+        return s + (m?.price ?? 500);
       }, 0);
       html += `<div class="pay-banner pay-banner-fixed">
         <div class="pay-banner-text">💳 Tenés <strong>$${total}</strong> para pagar (${unpaid.length} pronóstico${unpaid.length !== 1 ? 's' : ''})</div>
@@ -244,11 +244,11 @@ function buildPronosticos() {
     return html;
   }
 
-  const unpaid = preds.filter(p => !p.paid);
+    const unpaid = preds.filter(p => p.paid !== true);
   if (unpaid.length) {
     const total = unpaid.reduce((s, p) => {
       const m = getMatchById(p.matchId);
-      return s + (m?.price || 500);
+      return s + (m?.price ?? 500);
     }, 0);
     html += `<div class="pay-banner pay-banner-fixed">
       <div class="pay-banner-text">💳 Tenés <strong>$${total}</strong> para pagar (${unpaid.length} pronóstico${unpaid.length !== 1 ? 's' : ''})</div>
@@ -379,7 +379,8 @@ function buildPosiciones() {
             const lbKey = cat.key + '_' + u.id;
             const exp = state.expandedLbKey === lbKey;
             const medals = ['🥇'];
-            html += `<span class="lb-pos">${i < 1 ? medals[i] : '#' + (i+1)}</span>
+            html += `<div class="leaderboard-row" style="cursor:pointer" data-action="toggle-lb-user" data-lb-key="${esc(lbKey)}">
+              <span class="lb-pos">${i < 1 ? medals[i] : '#' + (i+1)}</span>
               <span class="lb-name">${esc(u.username)}</span>
               <span class="lb-pts">${u.points} pts</span>
               <span style="color:#78909c;font-size:0.8rem">${exp ? '▲' : '▼'}</span>
@@ -472,7 +473,7 @@ function buildAdminPagos() {
       const preds = grouped[uid];
       const total = preds.reduce((s, p) => {
         const m = getMatchById(p.matchId);
-        return s + (m?.price || 500);
+        return s + (m?.price ?? 500);
       }, 0);
       html += `<div class="group-section">
         <h2 class="group-title" style="cursor:pointer" data-action="toggle-user" data-uid="${esc(uid)}">

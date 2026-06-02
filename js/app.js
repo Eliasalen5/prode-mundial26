@@ -122,7 +122,7 @@ async function loadPrizeData() {
       const p = d.data();
       const m = getMatchById(p.matchId);
       if (m && [1, 2, 3].includes(m.matchday)) {
-        totals[m.matchday] += m.price || 500;
+        totals[m.matchday] += m.price ?? 500;
       }
     });
     state.prizeData = {
@@ -146,7 +146,7 @@ function handlePay() {
   }).filter(Boolean);
   const total = unpaid.reduce((s, [matchId]) => {
     const m = getMatchById(matchId);
-    return s + (m?.price || 500);
+    return s + (m?.price ?? 500);
   }, 0);
   const username = state.userData?.username || state.user?.email || 'Usuario';
   const msg = encodeURIComponent(
@@ -340,7 +340,8 @@ document.getElementById('root').addEventListener('click', (e) => {
     });
   }
   else if (action === 'mark-notif-read') {
-    db.collection('notifications').doc(e.target.dataset.notifId).update({ read: true });
+    const id = e.target.closest('[data-notif-id]')?.dataset.notifId;
+    if (id) db.collection('notifications').doc(id).update({ read: true });
   }
   else if (action === 'toggle-group') {
     const el = e.target.closest('[data-action="toggle-group"]');
