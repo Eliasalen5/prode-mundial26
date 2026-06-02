@@ -41,7 +41,11 @@ function loadCachedUsers() {
   } else {
     db.collection('users').get().then(snap => {
       state.usersMap = {};
-      snap.docs.forEach(d => { state.usersMap[d.id] = d.data().username; });
+      state.paseStatus = {};
+      snap.docs.forEach(d => {
+        state.usersMap[d.id] = d.data().username;
+        state.paseStatus[d.id] = d.data().eliminatoriasPaid || false;
+      });
       _cachedUsersMap = Object.assign({}, state.usersMap);
     }).catch(() => {});
   }
@@ -125,10 +129,14 @@ async function loadPrizeData() {
         totals[m.matchday] += m.price ?? 500;
       }
     });
+    // Eliminatorias: count users who paid the pase
+    const usersSnap = await db.collection('users').where('eliminatoriasPaid', '==', true).get();
+    const elimPozo = usersSnap.size * state.eliminatoriasPrice * 0.9;
     state.prizeData = {
       1: Math.round(totals[1] * 0.9),
       2: Math.round(totals[2] * 0.9),
       3: Math.round(totals[3] * 0.9),
+      elim: Math.round(elimPozo),
     };
     render();
   } catch (_) {}
@@ -138,16 +146,26 @@ async function loadPrizeData() {
 // BUSINESS HANDLERS
 // ============================================================
 function handlePay() {
-  const unpaid = Object.entries(state.predictions).filter(([, p]) => !p.paid);
-  if (unpaid.length === 0) return;
+  const unpaid = Object.entries(state.predictions).filter(([, p]) => p.paid !== true);
+  const hasUnpaidElim = Object.entries(state.predictions).some(([, p]) => {
+    if (p.paid) return false;
+    const m = getMatchById(p.matchId);
+    return m && m.stage === 'knockout';
+  });
+  const needsPase = !state.eliminatoriasPaid && hasUnpaidElim;
+  if (unpaid.length === 0 && !needsPase) return;
   const lines = unpaid.map(([matchId]) => {
     const m = getMatchById(matchId);
     return m ? `- ${m.homeTeam} vs ${m.awayTeam} ($${m.price})` : '';
   }).filter(Boolean);
-  const total = unpaid.reduce((s, [matchId]) => {
+  let total = unpaid.reduce((s, [matchId]) => {
     const m = getMatchById(matchId);
     return s + (m?.price ?? 500);
   }, 0);
+  if (needsPase) {
+    lines.push(`- Pase Eliminatorias ($${state.eliminatoriasPrice})`);
+    total += state.eliminatoriasPrice;
+  }
   const username = state.userData?.username || state.user?.email || 'Usuario';
   const msg = encodeURIComponent(
     `Hola Elias, soy ${username}. Te voy a transferir $${total} por estos partidos:\n\n${lines.join('\n')}\n\nAlias: Eliasalen5 — Ahora te mando el comprobante.`
@@ -181,7 +199,11 @@ async function handleSavePrediction(matchId) {
       updatedAt: new Date(),
     }, { merge: true });
     await loadPredictionsForUser(state.user.uid);
-    showToast('✅ Pronóstico guardado');
+    if (match.stage === 'knockout' && !state.eliminatoriasPaid) {
+      showToast('🔒 Guardado. Necesitás el pase de eliminatorias ($10.000) para sumar puntos.');
+    } else {
+      showToast('✅ Pronóstico guardado');
+    }
     render();
   } catch (e) {
     showToast('❌ Error al guardar: ' + e.message);
@@ -205,6 +227,36 @@ async function handleConfirmPay(predId) {
     render();
   } catch (e) {
     showToast('❌ Ocurrió un error, avisale a Elias');
+  }
+}
+
+async function handleConfirmPase(uid) {
+  try {
+    await db.collection('users').doc(uid).update({ eliminatoriasPaid: true });
+    // Mark all knockout predictions as paid
+    const predSnap = await db.collection('predictions').where('userId', '==', uid).get();
+    const batch = db.batch();
+    predSnap.docs.forEach(d => {
+      const p = d.data();
+      const m = getMatchById(p.matchId);
+      if (m && m.stage === 'knockout') {
+        batch.update(d.ref, { paid: true, status: 'unlocked' });
+      }
+    });
+    await batch.commit();
+    if (state.user?.uid === uid) state.eliminatoriasPaid = true;
+    state.paseStatus[uid] = true;
+    const username = state.usersMap[uid] || uid.slice(0, 8);
+    await db.collection('notifications').add({
+      userId: uid,
+      message: `Tu pase de eliminatorias ($10.000) fue confirmado. Ya podés pronosticar todos los partidos.`,
+      read: false,
+      createdAt: new Date(),
+    });
+    showToast(`✅ Pase confirmado para ${username}`);
+    render();
+  } catch (e) {
+    showToast('❌ Error al confirmar pase: ' + e.message);
   }
 }
 
@@ -327,6 +379,7 @@ document.getElementById('root').addEventListener('click', (e) => {
   else if (action === 'pay') handlePay();
   else if (action === 'save-prediction') handleSavePrediction(e.target.dataset.matchId);
   else if (action === 'confirm-pay') handleConfirmPay(e.target.dataset.predId);
+  else if (action === 'confirm-pase') handleConfirmPase(e.target.dataset.uid);
   else if (action === 'save-result') handleSaveResult(e.target.dataset.matchId);
   else if (action === 'clear-result') handleClearResult(e.target.dataset.matchId);
   else if (action === 'clean-orphans') {

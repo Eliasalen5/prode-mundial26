@@ -22,6 +22,9 @@ const state = {
   selectedPronosticosFilter: '',
   prizeData: {},
   error: '',
+  eliminatoriasPaid: false,
+  eliminatoriasPrice: 10000,
+  paseStatus: {},
 };
 
 let unsubScores = null;

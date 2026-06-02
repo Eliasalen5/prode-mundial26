@@ -89,19 +89,27 @@ function buildHome() {
     <div style="margin-top:0.4rem;font-size:1.05rem">🏆 <strong>Premio estimado</strong>: 1 ganador por fecha</div>
     <span style="font-size:1.1rem;font-weight:700">F1: <span class="highlight">$${state.prizeData[1] || 0}</span> |
     F2: <span class="highlight">$${state.prizeData[2] || 0}</span> |
-    F3: <span class="highlight">$${state.prizeData[3] || 0}</span></span>
+    F3: <span class="highlight">$${state.prizeData[3] || 0}</span> |
+    ELIM: <span class="highlight">$${state.prizeData.elim || 0}</span></span>
   </div>`;
 
   // Payment banner (top)
   if (state.user) {
     const unpaid = Object.values(state.predictions).filter(p => p.paid !== true);
-    if (unpaid.length) {
-      const total = unpaid.reduce((s, p) => {
-        const m = getMatchById(p.matchId);
-        return s + (m?.price ?? 500);
-      }, 0);
+    const hasUnpaidElim = Object.values(state.predictions).some(p => {
+      if (p.paid) return false;
+      const m = getMatchById(p.matchId);
+      return m && m.stage === 'knockout';
+    });
+    const needsPase = !state.eliminatoriasPaid && hasUnpaidElim;
+    const paseTotal = needsPase ? state.eliminatoriasPrice : 0;
+    const total = unpaid.reduce((s, p) => { const m = getMatchById(p.matchId); return s + (m?.price ?? 500); }, 0) + paseTotal;
+    if (unpaid.length || needsPase) {
+      const label = unpaid.length
+        ? `$${total} (${unpaid.length} pronóstico${unpaid.length !== 1 ? 's' : ''}${needsPase ? ' + Pase Eliminatorias' : ''})`
+        : `$${total} (Pase Eliminatorias)`;
       html += `<div class="pay-banner pay-banner-fixed">
-        <div class="pay-banner-text">💳 Tenés <strong>$${total}</strong> para pagar (${unpaid.length} pronóstico${unpaid.length !== 1 ? 's' : ''})</div>
+        <div class="pay-banner-text">💳 Tenés <strong>$${total}</strong> para pagar (${unpaid.length} pronóstico${unpaid.length !== 1 ? 's' : ''}${needsPase ? ' + Pase Eliminatorias' : ''})</div>
         <button class="btn btn-success" data-action="pay">📲 Avisá por WhatsApp para pagar</button>
       </div>`;
     }
@@ -129,6 +137,12 @@ function buildHome() {
       }
       html += `</div>`;
     });
+
+    // Info banner Eliminatorias
+    html += `<div class="info-banner" style="margin:1rem 0">
+      <strong>🏆 Eliminatorias:</strong> Pase Único de <strong>$${state.eliminatoriasPrice.toLocaleString()}</strong> para pronosticar TODOS los partidos (R32 → Final).<br>
+      Rigen las mismas reglas de puntaje. Solo cuenta el <strong>resultado de los 90'</strong> (alargue y penales no suman puntos).
+    </div>`;
 
     // Eliminatorias
     const elimMatches = fechas.elim;
@@ -177,6 +191,7 @@ function buildHome() {
   return html;
 }
 
+
 function buildMatchCard(m) {
   const isFeatured = m.featured;
   const pred = state.predictions[m.id];
@@ -184,8 +199,11 @@ function buildMatchCard(m) {
   const now = new Date();
   const matchDate = m.matchDate?.toDate ? m.matchDate.toDate() : new Date(m.date);
   const isLocked = (matchDate.getTime() - now.getTime()) < 10 * 60 * 1000;
+  const isKO = m.stage === 'knockout';
+  const paseOk = state.eliminatoriasPaid;
+  const koLocked = isKO && state.user && !paseOk;
 
-  let html = `<div class="match-card${isLocked && !hasResult ? ' locked' : ''}${isFeatured ? ' featured' : ''}">`;
+  let html = `<div class="match-card${(isLocked && !hasResult) || koLocked ? ' locked' : ''}${isFeatured ? ' featured' : ''}">`;
   html += `<div class="match-teams">
     ${teamHTML(m.homeTeam)}
     <span class="vs">vs</span>
@@ -193,7 +211,11 @@ function buildMatchCard(m) {
     ${isFeatured ? '<span class="featured-badge">🔥 Destacado</span>' : ''}
   </div>`;
   html += `<div class="match-info">${formatDate(matchDate)}</div>`;
-  html += `<div class="match-price">$${m.price}</div>`;
+  if (isKO) {
+    html += `<div class="match-price" style="color:#ffd54f">🎟️ Pase $${(state.eliminatoriasPrice / 1000).toFixed(0)}k</div>`;
+  } else {
+    html += `<div class="match-price">$${m.price}</div>`;
+  }
 
   if (hasResult) {
     html += `<div class="match-score">${m.homeScore} - ${m.awayScore}</div>`;
@@ -204,7 +226,15 @@ function buildMatchCard(m) {
   }
 
   if (state.user && !hasResult) {
-    if (!isLocked) {
+    if (isKO && !paseOk) {
+      // Pase no pagado - locked
+      if (pred) {
+        html += `<div class="match-pred">${pred.homeScore} - ${pred.awayScore} <span class="locked-badge">🔒</span></div>
+          <div style="text-align:center;margin-top:0.3rem"><span style="color:#ffd54f;font-size:0.75rem">⏳ Pase pendiente</span></div>`;
+      } else {
+        html += `<div style="text-align:center;padding:0.5rem;color:#546e7a;font-size:0.8rem">🔒 Pagá el pase para pronosticar</div>`;
+      }
+    } else if (!isLocked) {
       const hs = state.homeScores[m.id] || (pred ? { home: pred.homeScore, away: pred.awayScore } : { home: '', away: '' });
       const btnLabel = pred?.paid ? 'Modificar' : 'Guardar';
       html += `<div class="match-inputs">
@@ -245,16 +275,20 @@ function buildPronosticos() {
   }
 
     const unpaid = preds.filter(p => p.paid !== true);
-  if (unpaid.length) {
-    const total = unpaid.reduce((s, p) => {
+    const hasUnpaidElim = preds.some(p => {
+      if (p.paid) return false;
       const m = getMatchById(p.matchId);
-      return s + (m?.price ?? 500);
-    }, 0);
-    html += `<div class="pay-banner pay-banner-fixed">
-      <div class="pay-banner-text">💳 Tenés <strong>$${total}</strong> para pagar (${unpaid.length} pronóstico${unpaid.length !== 1 ? 's' : ''})</div>
-      <button class="btn btn-success" data-action="pay">📲 Avisá por WhatsApp para pagar</button>
-    </div>`;
-  }
+      return m && m.stage === 'knockout';
+    });
+    const needsPase = !state.eliminatoriasPaid && hasUnpaidElim;
+    const paseTotal = needsPase ? state.eliminatoriasPrice : 0;
+    const total = unpaid.reduce((s, p) => { const m = getMatchById(p.matchId); return s + (m?.price ?? 500); }, 0) + paseTotal;
+    if (unpaid.length || needsPase) {
+      html += `<div class="pay-banner pay-banner-fixed">
+      <div class="pay-banner-text">💳 Tenés <strong>$${total}</strong> para pagar (${unpaid.length} pronóstico${unpaid.length !== 1 ? 's' : ''}${needsPase ? ' + Pase Eliminatorias' : ''})</div>
+        <button class="btn btn-success" data-action="pay">📲 Avisá por WhatsApp para pagar</button>
+      </div>`;
+    }
 
   // Filter by matchday
   const matchdays = {};
@@ -450,6 +484,8 @@ function buildAdminPagos() {
   const grouped = {};
   state.pendingPagos.forEach(p => {
     if (!state.usersMap[p.userId]) return;
+    const m = getMatchById(p.matchId);
+    if (m && m.stage === 'knockout') return; // handled via pase
     if (!grouped[p.userId]) grouped[p.userId] = [];
     grouped[p.userId].push(p);
   });
@@ -495,6 +531,29 @@ function buildAdminPagos() {
       html += `</div>`;
     });
   }
+
+  // Pases Eliminatorias
+  const elimUids = {};
+  state.pendingPagos.forEach(p => {
+    if (!state.usersMap[p.userId]) return;
+    if (state.paseStatus[p.userId]) return;
+    const m = getMatchById(p.matchId);
+    if (m && m.stage === 'knockout') {
+      elimUids[p.userId] = (elimUids[p.userId] || 0) + 1;
+    }
+  });
+  const paseKeys = Object.keys(elimUids);
+  if (paseKeys.length) {
+    html += `<h2 style="margin-top:1.5rem">🎟️ Pases Eliminatorias ($10.000)</h2>`;
+    paseKeys.forEach(uid => {
+      const count = elimUids[uid];
+      html += `<div class="match-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+        <span>${esc(state.usersMap[uid] || uid.slice(0,8))} — ${count} pronóstico${count !== 1 ? 's' : ''}</span>
+        <button class="btn btn-success btn-sm" data-action="confirm-pase" data-uid="${esc(uid)}">Confirmar pase $10.000</button>
+      </div>`;
+    });
+  }
+
   html += `</div>`;
   return html;
 }
