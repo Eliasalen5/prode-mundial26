@@ -120,12 +120,12 @@ function buildHome() {
       <h2 class="group-title" style="cursor:pointer" data-action="toggle-group" data-key="${esc(elimKey)}">
         🏆 Eliminatorias ${isLocked ? '🔒' : ''} <span style="float:right;font-size:0.85rem;color:#78909c">${isElimOpen ? '▲' : '▼'}</span>
       </h2>`;
-    if (state.user && !isElimPaid && !isLocked) {
+    if (state.user && !isElimPaid) {
       html += `<div class="pay-banner">
         <span style="color:#ffd54f">🔒 Pagá $${state.fechaPrice.toLocaleString()} para Eliminatorias</span>
         <button class="btn btn-success btn-sm" style="margin-left:0.5rem" data-action="pay-fecha" data-fecha="elim">💵 Pagar por WhatsApp</button>
       </div>`;
-    } else if (state.user && isElimPaid && !isLocked) {
+    } else if (state.user && isElimPaid) {
       html += `<div class="pay-banner" style="color:#4caf50">✅ Eliminatorias pagadas</div>`;
     }
     if (isElimOpen) {
