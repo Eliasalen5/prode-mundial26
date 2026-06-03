@@ -35,6 +35,7 @@ function render() {
   if (page === '/login') content = buildLogin();
   else if (page === '/register') content = buildRegister();
   else if (page === '/grupos') content = buildGrupos();
+  else if (page === '/posiciones') content = buildPosiciones();
   else if (page === '/pronosticos') content = buildPronosticos();
   else if (page === '/notificaciones') content = buildNotificaciones();
   else if (page === '/admin/pagos') content = buildAdminPagos();
@@ -48,6 +49,16 @@ function render() {
     loadCachedUsers();
     unsubPagos = db.collection('users').onSnapshot(() => {
       loadCachedUsers();
+      render();
+    });
+  }
+
+  // All predictions listener (posiciones)
+  if (page === '/posiciones' && !unsubAllPredictions) {
+    loadCachedUsers();
+    unsubAllPredictions = db.collection('predictions').where('scored', '==', true).onSnapshot(snap => {
+      state.allPredictions = {};
+      snap.docs.forEach(d => { state.allPredictions[d.id] = { id: d.id, ...d.data() }; });
       render();
     });
   }

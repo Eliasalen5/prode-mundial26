@@ -15,12 +15,15 @@ const state = {
   lastNotifCount: 0,
   predictions: {},
   homeScores: {},
+  allPredictions: {},
+  selectedPosicionesFilter: '',
 };
 
 let unsubScores = null;
 let unsubPagos = null;
 let unsubNotifications = null;
 let unsubPredictions = null;
+let unsubAllPredictions = null;
 let currentPage = '';
 
 function cleanupListeners() {
@@ -28,6 +31,7 @@ function cleanupListeners() {
   if (unsubPagos) { unsubPagos(); unsubPagos = null; }
   if (unsubNotifications) { unsubNotifications(); unsubNotifications = null; }
   if (unsubPredictions) { unsubPredictions(); unsubPredictions = null; }
+  if (unsubAllPredictions) { unsubAllPredictions(); unsubAllPredictions = null; }
 }
 
 function getPage() {

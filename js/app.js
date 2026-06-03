@@ -67,6 +67,7 @@ async function handleSaveResult(matchId) {
       state.matches[idx].awayScore = Number(s.away);
       state.matches[idx].status = 'played';
     }
+    calculatePointsForMatch(matchId);
     showToast('✅ Resultado guardado');
     render();
   } catch (e) {
@@ -88,10 +89,56 @@ async function handleClearResult(matchId) {
       state.matches[idx].awayScore = null;
       state.matches[idx].status = 'locked';
     }
+    clearPointsForMatch(matchId);
     showToast('🧹 Resultado limpiado');
     render();
   } catch (e) {
     showToast('❌ Error: ' + e.message);
+  }
+}
+
+// ============================================================
+// SCORING
+// ============================================================
+async function calculatePointsForMatch(matchId) {
+  const match = state.matches.find(m => m.id === matchId);
+  if (!match || match.homeScore == null) return;
+  try {
+    const snap = await db.collection('predictions').where('matchId', '==', matchId).get();
+    if (snap.empty) return;
+    const batch = db.batch();
+    snap.docs.forEach(doc => {
+      const pred = doc.data();
+      if (pred.homeScore == null || pred.awayScore == null) return;
+      const exact = Number(pred.homeScore) === match.homeScore && Number(pred.awayScore) === match.awayScore;
+      const winnerCorrect = (match.homeScore > match.awayScore && Number(pred.homeScore) > Number(pred.awayScore)) ||
+        (match.homeScore < match.awayScore && Number(pred.homeScore) < Number(pred.awayScore)) ||
+        (match.homeScore === match.awayScore && Number(pred.homeScore) === Number(pred.awayScore));
+      let points = 0;
+      if (match.featured) {
+        points = exact ? 5 : (winnerCorrect ? 2 : 0);
+      } else {
+        points = exact ? 3 : (winnerCorrect ? 1 : 0);
+      }
+      batch.update(doc.ref, { points, scored: true });
+    });
+    await batch.commit();
+  } catch (e) {
+    console.error('Scoring error:', e);
+  }
+}
+
+async function clearPointsForMatch(matchId) {
+  try {
+    const snap = await db.collection('predictions').where('matchId', '==', matchId).get();
+    if (snap.empty) return;
+    const batch = db.batch();
+    snap.docs.forEach(doc => {
+      batch.update(doc.ref, { points: null, scored: false });
+    });
+    await batch.commit();
+  } catch (e) {
+    console.error('Clear scoring error:', e);
   }
 }
 
@@ -241,6 +288,10 @@ document.getElementById('root').addEventListener('change', (e) => {
   }
   else if (action === 'filter-pronosticos') {
     state.selectedPronosticosFilter = e.target.value;
+    render();
+  }
+  else if (action === 'filter-posiciones') {
+    state.selectedPosicionesFilter = e.target.value;
     render();
   }
 });

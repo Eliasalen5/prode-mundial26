@@ -12,6 +12,7 @@ function buildNavbar() {
     <div class="navbar-links">
       <a href="#/" class="${getPage() === '/' ? 'active' : ''}">🏠 Fixture</a>
       <a href="#/grupos" class="${getPage() === '/grupos' ? 'active' : ''}">📋 Grupos</a>
+      <a href="#/posiciones" class="${getPage() === '/posiciones' ? 'active' : ''}">🏆 Posiciones</a>
       <a href="#/pronosticos" class="${getPage() === '/pronosticos' ? 'active' : ''}">📝 Pronósticos</a>
       <a href="#/notificaciones" class="${getPage() === '/notificaciones' ? 'active' : ''}">🔔 Notificaciones${unread ? ` <span class="notif-badge">${unread}</span>` : ''}</a>`;
   if (isAdmin) {
@@ -75,7 +76,11 @@ function buildRegister() {
 
 function buildHome() {
   let html = `<div class="container">
-    <h1>Fixture Mundial 2026</h1>`;
+    <h1>Fixture Mundial 2026</h1>
+    <div class="alert alert-info" style="margin-bottom:1rem;font-size:0.85rem">
+      <strong>📊 Sistema de puntos:</strong> Partido normal → resultado exacto <strong>3 pts</strong>, ganador/acierto <strong>1 pt</strong>.
+      Partido destacado 🔥 → exacto <strong>5 pts</strong>, ganador/acierto <strong>2 pts</strong>.
+    </div>`;
 
   const ms = state.matches;
   if (!ms.length) {
@@ -355,6 +360,75 @@ function buildPronosticos() {
     html += `</div>`;
   });
 
+  html += `</div>`;
+  return html;
+}
+
+function buildPosiciones() {
+  let html = `<div class="container">
+    <h1>🏆 Posiciones</h1>
+    <div class="alert alert-info" style="margin-bottom:1rem;font-size:0.85rem">
+      <strong>📊 Puntuación:</strong> 🔥 Destacados: exacto <strong>5pts</strong>, ganador <strong>2pts</strong> |
+      Normales: exacto <strong>3pts</strong>, ganador <strong>1pt</strong>
+    </div>`;
+
+  const filter = state.selectedPosicionesFilter || '';
+
+  const mdLabels = { '1': 'Fecha 1', '2': 'Fecha 2', '3': 'Fecha 3', 'elim': 'Eliminatorias' };
+  html += `<select class="filter-select" data-action="filter-posiciones">
+    <option value="">Todas las fechas</option>`;
+  Object.keys(mdLabels).forEach(k => {
+    html += `<option value="${esc(k)}" ${filter === k ? 'selected' : ''}>${mdLabels[k]}</option>`;
+  });
+  html += `</select>`;
+
+  const preds = Object.values(state.allPredictions);
+  if (!preds.length) {
+    html += `<div class="alert alert-info">Todavía no hay pronósticos puntuados. Los puntajes aparecen cuando el admin cargue resultados.</div>`;
+    html += `</div>`;
+    return html;
+  }
+
+  // Agrupar por userId
+  const userPoints = {};
+  preds.forEach(p => {
+    const m = state.matches.find(x => x.id === p.matchId);
+    if (!m) return;
+    const md = m.stage === 'knockout' ? 'elim' : String(m.matchday);
+    if (filter && filter !== md) return;
+    if (!userPoints[p.userId]) userPoints[p.userId] = { total: 0, predicted: 0, exactos: 0, parciales: 0 };
+    userPoints[p.userId].total += p.points || 0;
+    userPoints[p.userId].predicted++;
+    if (p.points >= 3) userPoints[p.userId].exactos++;
+    else if (p.points >= 1) userPoints[p.userId].parciales++;
+  });
+
+  const sorted = Object.keys(userPoints)
+    .map(uid => ({ uid, ...userPoints[uid], username: state.usersMap[uid] || uid.slice(0, 8) }))
+    .sort((a, b) => b.total - a.total);
+
+  if (!sorted.length) {
+    html += `<div class="alert alert-info">Sin resultados para este filtro</div>`;
+    html += `</div>`;
+    return html;
+  }
+
+  html += `<div class="standings-scroll"><table class="standings-table">
+    <thead><tr>
+      <th>#</th><th>Usuario</th><th>Pts</th><th>Pronosticados</th><th>Exactos</th><th>Parciales</th>
+    </tr></thead><tbody>`;
+  sorted.forEach((u, i) => {
+    const highlight = state.user?.uid === u.uid ? ' style="background:#1a3a5c;font-weight:700"' : '';
+    html += `<tr${highlight}>
+      <td>${i + 1}</td>
+      <td>${esc(u.username)}</td>
+      <td class="pts-cell">${u.total}</td>
+      <td>${u.predicted}</td>
+      <td>${u.exactos}</td>
+      <td>${u.parciales}</td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
   html += `</div>`;
   return html;
 }
