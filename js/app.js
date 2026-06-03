@@ -317,15 +317,15 @@ async function handleCleanAllPredictions() {
 
 async function handleCleanAllPayments() {
   if (!confirm('¿Estás seguro? Se van a LIMPIAR TODOS los pagos de todos los usuarios.')) return;
-  if (!confirm('¿REALMENTE seguro? Todos los fechaPaid van a quedar en false.')) return;
+  if (!confirm('¿REALMENTE seguro? Todos los fechaPaid van a quedar como pagados.')) return;
   try {
     const usersSnap = await db.collection('users').get();
     const batch = db.batch();
     usersSnap.docs.forEach(d => {
-      batch.update(d.ref, { fechaPaid: { '1': false, '2': false, '3': false, 'elim': false } });
+      batch.update(d.ref, { fechaPaid: { '1': true, '2': true, '3': true, 'elim': true } });
     });
     await batch.commit();
-    state.fechaPaid = { '1': false, '2': false, '3': false, 'elim': false };
+    state.fechaPaid = { '1': true, '2': true, '3': true, 'elim': true };
     state.fechaStatus = {};
     state.pendingPagos = [];
     _cachedUsersMap = null;

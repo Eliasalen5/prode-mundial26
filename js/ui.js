@@ -471,15 +471,14 @@ function buildAdminPagos() {
     predCount[p.userId][fk] = (predCount[p.userId][fk] || 0) + 1;
   });
 
-  // Armar lista de usuarios con fechas impagas y al menos 1 predicción
+  // Armar lista de usuarios con fechas impagas
   const userFecha = {};
   Object.keys(state.usersMap).forEach(uid => {
     const fs = state.fechaStatus[uid] || {};
     ['1', '2', '3', 'elim'].forEach(fk => {
-      const cnt = predCount[uid]?.[fk] || 0;
-      if (!fs[fk] && cnt > 0) {
+      if (!fs[fk]) {
         if (!userFecha[uid]) userFecha[uid] = {};
-        userFecha[uid][fk] = cnt;
+        userFecha[uid][fk] = predCount[uid]?.[fk] || 0;
       }
     });
   });
