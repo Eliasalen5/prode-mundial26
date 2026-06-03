@@ -142,31 +142,27 @@ function handlePay() {
   let total = 0;
   [1, 2, 3].forEach(f => {
     if (state.fechaPaid[f]) return;
-    const has = Object.values(state.predictions).some(p => {
-      if (p.paid) return false;
-      const m = getMatchById(p.matchId);
-      return m && m.matchday === f;
-    });
-    if (has) {
-      lines.push(`- Fecha ${f} ($${state.fechaPrice.toLocaleString()})`);
-      total += state.fechaPrice;
-    }
+    lines.push(`- Fecha ${f} ($${state.fechaPrice.toLocaleString()})`);
+    total += state.fechaPrice;
   });
   if (!state.fechaPaid['elim']) {
-    const has = Object.values(state.predictions).some(p => {
-      if (p.paid) return false;
-      const m = getMatchById(p.matchId);
-      return m && m.stage === 'knockout';
-    });
-    if (has) {
-      lines.push(`- Eliminatorias ($${state.fechaPrice.toLocaleString()})`);
-      total += state.fechaPrice;
-    }
+    lines.push(`- Eliminatorias ($${state.fechaPrice.toLocaleString()})`);
+    total += state.fechaPrice;
   }
   if (!lines.length) return;
   const username = state.userData?.username || state.user?.email || 'Usuario';
   const msg = encodeURIComponent(
     `Hola Elias, soy ${username}. Te voy a transferir $${total} por estas fechas:\n\n${lines.join('\n')}\n\nAlias: Eliasalen5 — Ahora te mando el comprobante.`
+  );
+  window.open(`https://wa.me/543329300352?text=${msg}`, '_blank');
+}
+
+function handlePayFecha(fechaKey) {
+  if (state.fechaPaid[fechaKey]) return;
+  const label = fechaKey === 'elim' ? 'Eliminatorias' : 'Fecha ' + fechaKey;
+  const username = state.userData?.username || state.user?.email || 'Usuario';
+  const msg = encodeURIComponent(
+    `Hola Elias, soy ${username}. Te voy a transferir $${state.fechaPrice.toLocaleString()} para ${label}.\n\nAlias: Eliasalen5 — Ahora te mando el comprobante.`
   );
   window.open(`https://wa.me/543329300352?text=${msg}`, '_blank');
 }
@@ -364,6 +360,7 @@ document.getElementById('root').addEventListener('click', (e) => {
 
   if (action === 'logout') handleLogout();
   else if (action === 'pay') handlePay();
+  else if (action === 'pay-fecha') handlePayFecha(e.target.dataset.fecha);
   else if (action === 'save-prediction') handleSavePrediction(e.target.dataset.matchId);
   else if (action === 'confirm-fecha-pay') handleConfirmFechaPay(e.target.dataset.uid, e.target.dataset.fecha);
   else if (action === 'save-result') handleSaveResult(e.target.dataset.matchId);

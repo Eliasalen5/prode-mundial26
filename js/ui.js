@@ -150,7 +150,7 @@ function buildHome() {
       if (isOpen) {
         if (fechaNotPaid && hasPreds) {
           html += `<div style="text-align:center;padding:0.5rem">
-            <button class="btn btn-success btn-sm" data-action="pay">💵 Pagar $${state.fechaPrice.toLocaleString()} para Fecha ${f}</button>
+            <button class="btn btn-success btn-sm" data-action="pay-fecha" data-fecha="${f}">💵 Pagar $${state.fechaPrice.toLocaleString()} para Fecha ${f}</button>
           </div>`;
         }
         fechas[f].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(m => { html += buildMatchCard(m); });
@@ -199,7 +199,7 @@ function buildHome() {
         });
         if (elimNotPaid && hasElimPreds) {
           html += `<div style="text-align:center;padding:0.5rem">
-            <button class="btn btn-success btn-sm" data-action="pay">💵 Pagar $${state.fechaPrice.toLocaleString()} para Eliminatorias</button>
+            <button class="btn btn-success btn-sm" data-action="pay-fecha" data-fecha="elim">💵 Pagar $${state.fechaPrice.toLocaleString()} para Eliminatorias</button>
           </div>`;
         }
         const elimGroups = {};
