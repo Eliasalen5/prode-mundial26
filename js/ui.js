@@ -282,39 +282,45 @@ function buildNotificaciones() {
 function buildAdminPagos() {
   let html = `<div class="container"><h1>💵 Pagos Pendientes</h1>`;
 
-  const rows = [];
+  const userFecha = {};
   Object.keys(state.usersMap).forEach(uid => {
     const fs = state.fechaStatus[uid] || {};
     ['1', '2', '3', 'elim'].forEach(fk => {
       if (!fs[fk]) {
-        rows.push({ uid, username: state.usersMap[uid] || uid.slice(0,8), fechaKey: fk });
+        if (!userFecha[uid]) userFecha[uid] = {};
+        userFecha[uid][fk] = 0;
       }
     });
   });
 
-  if (rows.length) {
+  const uids = Object.keys(userFecha).filter(uid => {
+    return !state.selectedPagosUser || uid === state.selectedPagosUser;
+  });
+
+  if (Object.keys(userFecha).length) {
     html += `<select class="filter-select" data-action="filter-pagos">
       <option value="">Todos los participantes</option>`;
-    const seen = {};
-    rows.forEach(r => {
-      if (!seen[r.uid]) { seen[r.uid] = true;
-        html += `<option value="${esc(r.uid)}" ${state.selectedPagosUser === r.uid ? 'selected' : ''}>${esc(r.username)}</option>`;
-      }
+    Object.keys(userFecha).forEach(uid => {
+      html += `<option value="${esc(uid)}" ${state.selectedPagosUser === uid ? 'selected' : ''}>${esc(state.usersMap[uid] || uid.slice(0,8))}</option>`;
     });
     html += `</select>`;
   }
 
-  const filtered = state.selectedPagosUser ? rows.filter(r => r.uid === state.selectedPagosUser) : rows;
-
-  if (!filtered.length) {
+  if (!uids.length) {
     html += `<div class="alert alert-info">Sin pagos pendientes</div>`;
   } else {
-    filtered.forEach(r => {
-      const label = r.fechaKey === 'elim' ? 'Eliminatorias' : 'Fecha ' + r.fechaKey;
-      html += `<div class="match-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
-        <span><strong>${esc(r.username)}</strong> — ${label}</span>
-        <button class="btn btn-success btn-sm" data-action="confirm-fecha-pay" data-uid="${esc(r.uid)}" data-fecha="${esc(r.fechaKey)}">✅ Confirmar pago $${state.fechaPrice.toLocaleString()}</button>
-      </div>`;
+    uids.forEach(uid => {
+      const fechas = Object.keys(userFecha[uid]);
+      html += `<div class="group-section">
+        <h2 class="group-title">${esc(state.usersMap[uid] || uid.slice(0,8))}</h2>`;
+      fechas.forEach(fk => {
+        const label = fk === 'elim' ? 'Eliminatorias' : 'Fecha ' + fk;
+        html += `<div class="match-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+          <span><strong>${label}</strong> — $${state.fechaPrice.toLocaleString()}</span>
+          <button class="btn btn-success btn-sm" data-action="confirm-fecha-pay" data-uid="${esc(uid)}" data-fecha="${esc(fk)}">✅ Confirmar pago</button>
+        </div>`;
+      });
+      html += `</div>`;
     });
   }
 
