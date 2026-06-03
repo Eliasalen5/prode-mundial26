@@ -9,6 +9,7 @@ function buildNavbar() {
   html += `</div>
     <div class="navbar-links">
       <a href="#/" class="${getPage() === '/' ? 'active' : ''}">🏠 Fixture</a>
+      <a href="#/grupos" class="${getPage() === '/grupos' ? 'active' : ''}">📋 Grupos</a>
     </div>
   </nav>`;
   return html;
@@ -151,6 +152,37 @@ function buildMatchCard(m) {
   }
 
   html += `</div>`;
+  return html;
+}
+
+function buildGrupos() {
+  const groupNames = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+  const groups = {};
+  groupNames.forEach(g => groups[g] = new Set());
+
+  state.matches.forEach(m => {
+    if (m.stage === 'group' && groups[m.group]) {
+      groups[m.group].add(m.homeTeam);
+      groups[m.group].add(m.awayTeam);
+    }
+  });
+
+  let html = `<div class="container"><h1>Fase de Grupos</h1>
+    <div class="grupos-grid">`;
+
+  groupNames.forEach(g => {
+    const teams = Array.from(groups[g]).sort();
+    if (!teams.length) return;
+    html += `<div class="group-section grupo-card">
+      <h2 class="group-title">Grupo ${g}</h2>
+      <div class="grupo-teams">`;
+    teams.forEach(t => {
+      html += `<div class="grupo-team">${teamHTML(t)}</div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  html += `</div></div>`;
   return html;
 }
 

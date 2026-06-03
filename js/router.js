@@ -28,6 +28,7 @@ function render() {
   let content = '';
   if (page === '/login') content = buildLogin();
   else if (page === '/register') content = buildRegister();
+  else if (page === '/grupos') content = buildGrupos();
   else content = buildHome();
 
   document.getElementById('root').innerHTML = buildNavbar() + '<main class="main-content">' + content + '</main>';

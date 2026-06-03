@@ -151,6 +151,25 @@ h2 { font-size: 1rem; color: #b0bec5; margin-bottom: 0.5rem; }
 .locked { opacity: 0.5; pointer-events: none; }
 .locked-badge { color: #78909c; font-size: 0.75rem; }
 
+/* Groups page */
+.grupos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.8rem;
+}
+.grupo-card .group-title {
+  font-size: 0.9rem;
+}
+.grupo-teams {
+  padding: 0.5rem 1rem;
+}
+.grupo-team {
+  padding: 0.4rem 0;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #1a2a3e;
+}
+.grupo-team:last-child { border-bottom: none; }
+
 /* Animations */
 @keyframes slideIn {
   from { transform: translateX(100%); opacity: 0; }
