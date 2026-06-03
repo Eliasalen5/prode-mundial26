@@ -182,7 +182,10 @@ async function handleSavePrediction(matchId) {
   try {
     const docId = state.user.uid + '_' + matchId;
     const existing = state.predictions[matchId];
-    const paid = existing?.paid || false;
+    const isKO = match.stage === 'knockout';
+    const fechaKey = isKO ? 'elim' : String(match.matchday);
+    const fechaYaPagada = state.fechaPaid[fechaKey];
+    const paid = existing?.paid || fechaYaPagada;
     await db.collection('predictions').doc(docId).set({
       userId: state.user.uid,
       matchId: matchId,
@@ -193,8 +196,6 @@ async function handleSavePrediction(matchId) {
       updatedAt: new Date(),
     }, { merge: true });
     await loadPredictionsForUser(state.user.uid);
-    const isKO = match.stage === 'knockout';
-    const fechaKey = isKO ? 'elim' : String(match.matchday);
     if (!state.fechaPaid[fechaKey]) {
       showToast(`🔒 Guardado. Necesitás pagar $${state.fechaPrice.toLocaleString()} para ${isKO ? 'Eliminatorias' : 'Fecha ' + match.matchday} para sumar puntos.`);
     } else {
