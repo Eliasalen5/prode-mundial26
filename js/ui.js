@@ -102,20 +102,10 @@ function buildHome() {
     let total = 0;
     [1, 2, 3].forEach(f => {
       if (state.fechaPaid[f]) return;
-      const has = Object.values(state.predictions).some(p => {
-        if (p.paid) return false;
-        const m = getMatchById(p.matchId);
-        return m && m.matchday === f;
-      });
-      if (has) { unpaidFechas.push('Fecha ' + f); total += state.fechaPrice; }
+      unpaidFechas.push('Fecha ' + f); total += state.fechaPrice;
     });
     if (!state.fechaPaid['elim']) {
-      const has = Object.values(state.predictions).some(p => {
-        if (p.paid) return false;
-        const m = getMatchById(p.matchId);
-        return m && m.stage === 'knockout';
-      });
-      if (has) { unpaidFechas.push('Eliminatorias'); total += state.fechaPrice; }
+      unpaidFechas.push('Eliminatorias'); total += state.fechaPrice;
     }
     if (unpaidFechas.length) {
       html += `<div class="pay-banner pay-banner-fixed">
@@ -139,16 +129,12 @@ function buildHome() {
       const key = 'fecha_' + f;
       const isOpen = state.collapsedGroups[key] === true;
       const fechaNotPaid = state.user && !state.fechaPaid[f];
-      const hasPreds = Object.values(state.predictions).some(p => {
-        const m = getMatchById(p.matchId);
-        return m && m.matchday === f;
-      });
       html += `<div class="group-section">
         <h2 class="group-title" style="cursor:pointer" data-action="toggle-group" data-key="${esc(key)}">
           📅 Fecha ${f} <span style="float:right;font-size:0.85rem;color:#78909c">${isOpen ? '▲' : '▼'}</span>
         </h2>`;
       if (isOpen) {
-        if (fechaNotPaid && hasPreds) {
+        if (fechaNotPaid) {
           html += `<div style="text-align:center;padding:0.5rem">
             <button class="btn btn-success btn-sm" data-action="pay-fecha" data-fecha="${f}">💵 Pagar $${state.fechaPrice.toLocaleString()} para Fecha ${f}</button>
           </div>`;
@@ -193,11 +179,7 @@ function buildHome() {
         });
       } else {
         const elimNotPaid = state.user && !state.fechaPaid['elim'];
-        const hasElimPreds = Object.values(state.predictions).some(p => {
-          const m = getMatchById(p.matchId);
-          return m && m.stage === 'knockout';
-        });
-        if (elimNotPaid && hasElimPreds) {
+        if (elimNotPaid) {
           html += `<div style="text-align:center;padding:0.5rem">
             <button class="btn btn-success btn-sm" data-action="pay-fecha" data-fecha="elim">💵 Pagar $${state.fechaPrice.toLocaleString()} para Eliminatorias</button>
           </div>`;
@@ -307,20 +289,10 @@ function buildPronosticos() {
     let total = 0;
     [1, 2, 3].forEach(f => {
       if (state.fechaPaid[f]) return;
-      const has = preds.some(p => {
-        if (p.paid) return false;
-        const m = getMatchById(p.matchId);
-        return m && m.matchday === f;
-      });
-      if (has) { unpaidFechas.push('Fecha ' + f); total += state.fechaPrice; }
+      unpaidFechas.push('Fecha ' + f); total += state.fechaPrice;
     });
     if (!state.fechaPaid['elim']) {
-      const has = preds.some(p => {
-        if (p.paid) return false;
-        const m = getMatchById(p.matchId);
-        return m && m.stage === 'knockout';
-      });
-      if (has) { unpaidFechas.push('Eliminatorias'); total += state.fechaPrice; }
+      unpaidFechas.push('Eliminatorias'); total += state.fechaPrice;
     }
     if (unpaidFechas.length) {
       html += `<div class="pay-banner pay-banner-fixed">
