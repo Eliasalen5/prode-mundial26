@@ -368,32 +368,28 @@ function buildPosiciones() {
   let html = `<div class="container">
     <h1>🏆 Posiciones</h1>`;
 
-  const filter = state.selectedPosicionesFilter || '';
+  const filter = state.selectedPosicionesFilter || '1';
 
   const mdLabels = { '1': 'Fecha 1', '2': 'Fecha 2', '3': 'Fecha 3', 'elim': 'Eliminatorias' };
-  html += `<select class="filter-select" data-action="filter-posiciones">
-    <option value="">Todas las fechas</option>`;
+  html += `<select class="filter-select" data-action="filter-posiciones">`;
   Object.keys(mdLabels).forEach(k => {
     html += `<option value="${esc(k)}" ${filter === k ? 'selected' : ''}>${mdLabels[k]}</option>`;
   });
   html += `</select>`;
 
-  // Users who paid for the selected fecha
-  const paidUsers = state.fechaStatus && Object.keys(state.fechaStatus).length
-    ? Object.keys(state.fechaStatus).filter(uid => {
-        if (!filter) return Object.values(state.fechaStatus[uid] || {}).some(v => v);
-        return state.fechaStatus[uid]?.[filter];
-      })
-    : [];
-
   // Match IDs for the selected fecha
   const matchIdsInFecha = new Set();
   state.matches.forEach(m => {
     const md = m.stage === 'knockout' ? 'elim' : String(m.matchday);
-    if (!filter || filter === md) matchIdsInFecha.add(m.id);
+    if (filter === md) matchIdsInFecha.add(m.id);
   });
 
-  // Points from scored predictions
+  // Users who paid for the selected fecha
+  const paidUsers = state.fechaStatus && Object.keys(state.fechaStatus).length
+    ? Object.keys(state.fechaStatus).filter(uid => state.fechaStatus[uid]?.[filter])
+    : [];
+
+  // Points from scored predictions only in this fecha
   const userPoints = {};
   Object.values(state.allPredictions).forEach(p => {
     if (!matchIdsInFecha.has(p.matchId)) return;
