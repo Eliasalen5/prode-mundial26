@@ -212,15 +212,14 @@ function buildGrupos() {
       <div class="standings-scroll">
       <table class="standings-table">
         <thead><tr>
-          <th>#</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th>
+          <th>#</th><th>Equipo</th><th>Pts</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th>
         </tr></thead><tbody>`;
     standings.forEach((t, i) => {
       html += `<tr class="${i === 0 && t.pts > 0 ? 'pos-1' : ''}">
         <td>${i + 1}</td>
         <td>${teamHTML(t.name)}</td>
-        <td>${t.pj}</td><td>${t.pg}</td><td>${t.pe}</td><td>${t.pp}</td>
-        <td>${t.gf}</td><td>${t.gc}</td><td>${t.dg}</td>
         <td class="pts-cell">${t.pts}</td>
+        <td>${t.pj}</td><td>${t.pg}</td><td>${t.pe}</td><td>${t.pp}</td>
       </tr>`;
     });
     html += `</tbody></table></div></div>`;
