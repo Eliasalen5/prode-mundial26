@@ -112,6 +112,7 @@ async function handleSavePrediction(matchId) {
       status: 'submitted',
       updatedAt: new Date(),
     }, { merge: true });
+    delete state.homeScores[matchId];
     showToast('✅ Pronóstico guardado');
     render();
   } catch (e) {

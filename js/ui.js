@@ -200,7 +200,7 @@ function buildMatchCard(m, isLocked) {
         <input type="number" min="0" max="20" data-action="home-score" data-match-id="${esc(m.id)}" value="${hs.home}" placeholder="0">
         <span style="color:#546e7a">-</span>
         <input type="number" min="0" max="20" data-action="away-score" data-match-id="${esc(m.id)}" value="${hs.away}" placeholder="0">
-        <button class="btn btn-primary btn-sm" data-action="save-prediction" data-match-id="${esc(m.id)}">Guardar</button>
+        <button class="btn btn-primary btn-sm" data-action="save-prediction" data-match-id="${esc(m.id)}">${pred ? 'Modificar' : 'Guardar'}</button>
       </div>`;
     }
   }
