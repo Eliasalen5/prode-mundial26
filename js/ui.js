@@ -366,11 +366,7 @@ function buildPronosticos() {
 
 function buildPosiciones() {
   let html = `<div class="container">
-    <h1>🏆 Posiciones</h1>
-    <div class="alert alert-info" style="margin-bottom:1rem;font-size:0.85rem">
-      <strong>📊 Puntuación:</strong> 🔥 Destacados: exacto <strong>5pts</strong>, ganador <strong>2pts</strong> |
-      Normales: exacto <strong>3pts</strong>, ganador <strong>1pt</strong>
-    </div>`;
+    <h1>🏆 Posiciones</h1>`;
 
   const filter = state.selectedPosicionesFilter || '';
 
