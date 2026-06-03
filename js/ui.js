@@ -10,7 +10,7 @@ function buildNavbar() {
     { href: '/notificaciones', label: '🔔 Notificaciones' + (unread ? ` <span class="notif-badge" id="notif-badge">${unread}</span>` : ''), admin: false },
   ];
   if (isAdmin) {
-    menu.push({ href: '/admin/pagos', label: '💳 Pagos', admin: true });
+    menu.push({ href: '/admin/pagos', label: '💵 Pagos', admin: true });
     menu.push({ href: '/admin/resultados', label: '📋 Resultados', admin: true });
     menu.push({ href: '/admin/historial', label: '📜 Historial', admin: true });
   }
@@ -85,7 +85,7 @@ function buildHome() {
     <strong>💰 Puntajes:</strong><br>
     Partidos comunes: 3 pts resultado exacto / 1 pt ganador o empate.<br>
     Partidos <strong>Destacados</strong> 🔥: 5 pts resultado exacto / 2 pts ganador o empate.<br>
-    💳 <strong>$15.000 por fecha</strong> para habilitar todos los pronósticos de esa fecha.<br>
+    💵 <strong>$15.000 por fecha</strong> para habilitar todos los pronósticos de esa fecha.<br>
     ⏰ Los pronósticos se cierran <strong>10 minutos antes</strong> del inicio de cada partido.<br>
     <div style="margin-top:0.4rem;font-size:1.05rem">🏆 <strong>Premio estimado</strong>: 1 ganador por fecha</div>
     <div class="prize-row" style="font-size:1.1rem;font-weight:700;display:flex;flex-wrap:wrap;gap:0.3rem 0.8rem;justify-content:center">
@@ -119,7 +119,7 @@ function buildHome() {
     }
     if (unpaidFechas.length) {
       html += `<div class="pay-banner pay-banner-fixed">
-        <div class="pay-banner-text">💳 Tenés <strong>$${total.toLocaleString()}</strong> para pagar (${unpaidFechas.join(', ')})</div>
+        <div class="pay-banner-text">💵 Tenés <strong>$${total.toLocaleString()}</strong> para pagar (${unpaidFechas.join(', ')})</div>
         <button class="btn btn-success" data-action="pay">📲 Avisá por WhatsApp para pagar</button>
       </div>`;
     }
@@ -150,7 +150,7 @@ function buildHome() {
       if (isOpen) {
         if (fechaNotPaid && hasPreds) {
           html += `<div style="text-align:center;padding:0.5rem">
-            <button class="btn btn-success btn-sm" data-action="pay">💳 Pagar $${state.fechaPrice.toLocaleString()} para Fecha ${f}</button>
+            <button class="btn btn-success btn-sm" data-action="pay">💵 Pagar $${state.fechaPrice.toLocaleString()} para Fecha ${f}</button>
           </div>`;
         }
         fechas[f].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(m => { html += buildMatchCard(m); });
@@ -199,7 +199,7 @@ function buildHome() {
         });
         if (elimNotPaid && hasElimPreds) {
           html += `<div style="text-align:center;padding:0.5rem">
-            <button class="btn btn-success btn-sm" data-action="pay">💳 Pagar $${state.fechaPrice.toLocaleString()} para Eliminatorias</button>
+            <button class="btn btn-success btn-sm" data-action="pay">💵 Pagar $${state.fechaPrice.toLocaleString()} para Eliminatorias</button>
           </div>`;
         }
         const elimGroups = {};
@@ -324,7 +324,7 @@ function buildPronosticos() {
     }
     if (unpaidFechas.length) {
       html += `<div class="pay-banner pay-banner-fixed">
-      <div class="pay-banner-text">💳 Tenés <strong>$${total.toLocaleString()}</strong> para pagar (${unpaidFechas.join(', ')})</div>
+      <div class="pay-banner-text">💵 Tenés <strong>$${total.toLocaleString()}</strong> para pagar (${unpaidFechas.join(', ')})</div>
         <button class="btn btn-success" data-action="pay">📲 Avisá por WhatsApp para pagar</button>
       </div>`;
     }
@@ -518,7 +518,7 @@ function buildNotificaciones() {
 }
 
 function buildAdminPagos() {
-  let html = `<div class="container"><h1>💳 Pagos Pendientes</h1>`;
+  let html = `<div class="container"><h1>💵 Pagos Pendientes</h1>`;
 
   const userFecha = {};
   state.pendingPagos.forEach(p => {
