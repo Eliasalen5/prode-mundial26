@@ -179,28 +179,25 @@ async function handleSavePrediction(matchId) {
     showToast('⏰ El partido ya está bloqueado (menos de 10 min)');
     return;
   }
+  const isKO = match.stage === 'knockout';
+  const fechaKey = isKO ? 'elim' : String(match.matchday);
+  if (!state.fechaPaid[fechaKey]) {
+    showToast(`🔒 Pagá $${state.fechaPrice.toLocaleString()} para ${isKO ? 'Eliminatorias' : 'Fecha ' + match.matchday} primero`);
+    return;
+  }
   try {
     const docId = state.user.uid + '_' + matchId;
-    const existing = state.predictions[matchId];
-    const isKO = match.stage === 'knockout';
-    const fechaKey = isKO ? 'elim' : String(match.matchday);
-    const fechaYaPagada = state.fechaPaid[fechaKey];
-    const paid = existing?.paid || fechaYaPagada;
     await db.collection('predictions').doc(docId).set({
       userId: state.user.uid,
       matchId: matchId,
       homeScore: Number(s.home),
       awayScore: Number(s.away),
-      paid: paid,
-      status: paid ? 'submitted' : 'pending',
+      paid: true,
+      status: 'submitted',
       updatedAt: new Date(),
     }, { merge: true });
     await loadPredictionsForUser(state.user.uid);
-    if (!state.fechaPaid[fechaKey]) {
-      showToast(`🔒 Guardado. Necesitás pagar $${state.fechaPrice.toLocaleString()} para ${isKO ? 'Eliminatorias' : 'Fecha ' + match.matchday} para sumar puntos.`);
-    } else {
-      showToast('✅ Pronóstico guardado');
-    }
+    showToast('✅ Pronóstico guardado');
     render();
   } catch (e) {
     showToast('❌ Error al guardar: ' + e.message);

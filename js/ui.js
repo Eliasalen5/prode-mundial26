@@ -96,25 +96,6 @@ function buildHome() {
     </div>
   </div>`;
 
-  // Payment banner
-  if (state.user) {
-    const unpaidFechas = [];
-    let total = 0;
-    [1, 2, 3].forEach(f => {
-      if (state.fechaPaid[f]) return;
-      unpaidFechas.push('Fecha ' + f); total += state.fechaPrice;
-    });
-    if (!state.fechaPaid['elim']) {
-      unpaidFechas.push('Eliminatorias'); total += state.fechaPrice;
-    }
-    if (unpaidFechas.length) {
-      html += `<div class="pay-banner pay-banner-fixed">
-        <div class="pay-banner-text">💵 Tenés <strong>$${total.toLocaleString()}</strong> para pagar (${unpaidFechas.join(', ')})</div>
-        <button class="btn btn-success" data-action="pay">📲 Avisá por WhatsApp para pagar</button>
-      </div>`;
-    }
-  }
-
   const ms = state.matches;
   if (!ms.length) {
     html += `<div class="alert alert-info">Cargando partidos...</div>`;
@@ -284,22 +265,6 @@ function buildPronosticos() {
     html += `</div>`;
     return html;
   }
-
-    const unpaidFechas = [];
-    let total = 0;
-    [1, 2, 3].forEach(f => {
-      if (state.fechaPaid[f]) return;
-      unpaidFechas.push('Fecha ' + f); total += state.fechaPrice;
-    });
-    if (!state.fechaPaid['elim']) {
-      unpaidFechas.push('Eliminatorias'); total += state.fechaPrice;
-    }
-    if (unpaidFechas.length) {
-      html += `<div class="pay-banner pay-banner-fixed">
-      <div class="pay-banner-text">💵 Tenés <strong>$${total.toLocaleString()}</strong> para pagar (${unpaidFechas.join(', ')})</div>
-        <button class="btn btn-success" data-action="pay">📲 Avisá por WhatsApp para pagar</button>
-      </div>`;
-    }
 
   // Filter by matchday
   const matchdays = {};
