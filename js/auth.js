@@ -4,8 +4,10 @@ auth.onAuthStateChanged(async (user) => {
     if (user) {
       const snap = await db.collection('users').doc(user.uid).get();
       state.userData = snap.exists ? snap.data() : null;
+      state.fechaPaid = snap.exists ? (snap.data().fechaPaid || { '1': false, '2': false, '3': false, 'elim': false }) : { '1': false, '2': false, '3': false, 'elim': false };
     } else {
       state.userData = null;
+      state.fechaPaid = { '1': false, '2': false, '3': false, 'elim': false };
     }
   } catch (err) {
     console.error('Error fetching user data:', err);
@@ -33,6 +35,21 @@ function handleRegister(nombre, apellido, email, password, phone) {
       return db.collection('users').doc(cred.user.uid).set({
         nombre, apellido, username, email, phone, role: 'user', createdAt: new Date()
       });
+    })
+    .then(() => {
+      return db.collection('users').where('role', '==', 'admin').get();
+    })
+    .then(snap => {
+      const promises = [];
+      snap.docs.forEach(adminDoc => {
+        promises.push(db.collection('notifications').add({
+          userId: adminDoc.id,
+          message: `Nuevo usuario registrado: ${username}`,
+          read: false,
+          createdAt: new Date(),
+        }));
+      });
+      return Promise.all(promises);
     })
     .catch(err => {
       state.error = err.code === 'auth/email-already-in-use' ? 'El email ya está registrado' : err.message;

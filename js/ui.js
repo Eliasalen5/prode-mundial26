@@ -1,6 +1,7 @@
 function buildNavbar() {
   const username = state.userData?.username || '';
   const isAdmin = state.userData?.role === 'admin';
+  const unread = state.notifications.filter(n => !n.read).length;
   let html = `<nav class="navbar">
     <div class="navbar-top">
       <span class="navbar-brand">⚽ Prode 2026</span>`;
@@ -10,8 +11,10 @@ function buildNavbar() {
   html += `</div>
     <div class="navbar-links">
       <a href="#/" class="${getPage() === '/' ? 'active' : ''}">🏠 Fixture</a>
-      <a href="#/grupos" class="${getPage() === '/grupos' ? 'active' : ''}">📋 Grupos</a>`;
+      <a href="#/grupos" class="${getPage() === '/grupos' ? 'active' : ''}">📋 Grupos</a>
+      <a href="#/notificaciones" class="${getPage() === '/notificaciones' ? 'active' : ''}">🔔 Notificaciones${unread ? ` <span class="notif-badge">${unread}</span>` : ''}</a>`;
   if (isAdmin) {
+    html += `<a href="#/admin/pagos" class="${getPage() === '/admin/pagos' ? 'active' : ''}">💵 Pagos</a>`;
     html += `<a href="#/admin/resultados" class="${getPage() === '/admin/resultados' ? 'active' : ''}">📋 Resultados</a>`;
   }
   html += `</div>
@@ -86,12 +89,22 @@ function buildHome() {
     [1, 2, 3].forEach(f => {
       const key = 'fecha_' + f;
       const isOpen = state.collapsedGroups[key] === true;
+      const isPaid = state.fechaPaid[f];
       html += `<div class="group-section">
         <h2 class="group-title" style="cursor:pointer" data-action="toggle-group" data-key="${esc(key)}">
           📅 Fecha ${f} <span style="float:right;font-size:0.85rem;color:#78909c">${isOpen ? '▲' : '▼'}</span>
         </h2>`;
+      if (state.user && !isPaid) {
+        html += `<div class="pay-banner">
+          <span style="color:#ffd54f">🔒 Pagá $${state.fechaPrice.toLocaleString()} para Fecha ${f}</span>
+          <button class="btn btn-success btn-sm" style="margin-left:0.5rem" data-action="pay-fecha" data-fecha="${f}">💵 Pagar por WhatsApp</button>
+        </div>`;
+      } else if (state.user && isPaid) {
+        html += `<div class="pay-banner" style="color:#4caf50">✅ Fecha ${f} pagada</div>`;
+      }
       if (isOpen) {
-        fechas[f].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(m => { html += buildMatchCard(m); });
+        const isLocked = state.user && !isPaid;
+        fechas[f].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(m => { html += buildMatchCard(m, isLocked); });
       }
       html += `</div>`;
     });
@@ -102,10 +115,19 @@ function buildHome() {
     const isLocked = !allGroupsComplete || !ms.filter(m => m.stage === 'group').length;
     const elimKey = 'fecha_elim';
     const isElimOpen = state.collapsedGroups[elimKey] === true;
+    const isElimPaid = state.fechaPaid['elim'];
     html += `<div class="group-section">
       <h2 class="group-title" style="cursor:pointer" data-action="toggle-group" data-key="${esc(elimKey)}">
         🏆 Eliminatorias ${isLocked ? '🔒' : ''} <span style="float:right;font-size:0.85rem;color:#78909c">${isElimOpen ? '▲' : '▼'}</span>
       </h2>`;
+    if (state.user && !isElimPaid && !isLocked) {
+      html += `<div class="pay-banner">
+        <span style="color:#ffd54f">🔒 Pagá $${state.fechaPrice.toLocaleString()} para Eliminatorias</span>
+        <button class="btn btn-success btn-sm" style="margin-left:0.5rem" data-action="pay-fecha" data-fecha="elim">💵 Pagar por WhatsApp</button>
+      </div>`;
+    } else if (state.user && isElimPaid && !isLocked) {
+      html += `<div class="pay-banner" style="color:#4caf50">✅ Eliminatorias pagadas</div>`;
+    }
     if (isElimOpen) {
       if (isLocked) {
         html += `<div style="padding:1rem;text-align:center;color:#546e7a;font-size:0.85rem">
@@ -119,6 +141,7 @@ function buildHome() {
           </div>`;
         });
       } else {
+        const elimLocked = state.user && !isElimPaid;
         const elimGroups = {};
         elimMatches.forEach(m => {
           if (!elimGroups[m.matchday]) elimGroups[m.matchday] = [];
@@ -126,7 +149,7 @@ function buildHome() {
         });
         ['16avos','8avos','Cuartos','Semis','3er puesto','Final'].forEach(key => {
           if (elimGroups[key]) {
-            elimGroups[key].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(m => { html += buildMatchCard(m); });
+            elimGroups[key].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(m => { html += buildMatchCard(m, elimLocked); });
           }
         });
       }
@@ -139,10 +162,10 @@ function buildHome() {
 }
 
 
-function buildMatchCard(m) {
+function buildMatchCard(m, isLocked) {
   const hasResult = m.homeScore != null;
 
-  let html = `<div class="match-card${m.featured ? ' featured' : ''}">`;
+  let html = `<div class="match-card${m.featured ? ' featured' : ''}${isLocked ? ' locked' : ''}">`;
   html += `<div class="match-teams">
     ${teamHTML(m.homeTeam)}
     <span class="vs">vs</span>
@@ -153,6 +176,8 @@ function buildMatchCard(m) {
 
   if (hasResult) {
     html += `<div class="match-score">${m.homeScore} - ${m.awayScore}</div>`;
+  } else if (isLocked) {
+    html += `<span class="locked-badge">🔒</span>`;
   }
 
   html += `</div>`;
@@ -231,6 +256,85 @@ function buildGrupos() {
   }
 
   html += `</div></div>`;
+  return html;
+}
+
+function buildNotificaciones() {
+  let html = `<div class="container"><h1>Notificaciones</h1>`;
+  const unread = state.notifications.filter(n => !n.read);
+  if (unread.length) {
+    html += `<button class="btn btn-primary btn-sm" style="margin-bottom:0.8rem" data-action="mark-all-notif-read">Marcar todas leídas</button>`;
+  }
+  if (!state.notifications.length) {
+    html += `<div class="alert alert-info">No tenés notificaciones</div>`;
+  } else {
+    state.notifications.forEach(n => {
+      html += `<div class="notif-item ${n.read ? 'read' : 'unread'}" data-action="mark-notif-read" data-notif-id="${esc(n.id)}">
+        <span class="notif-msg">${esc(n.message)}</span>
+        <span class="notif-date">${n.createdAt?.toDate ? formatDate(n.createdAt.toDate()) : ''}</span>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+  return html;
+}
+
+function buildAdminPagos() {
+  let html = `<div class="container"><h1>💵 Pagos Pendientes</h1>`;
+
+  const userFecha = {};
+  Object.keys(state.usersMap).forEach(uid => {
+    const fs = state.fechaStatus[uid] || {};
+    ['1', '2', '3', 'elim'].forEach(fk => {
+      if (!fs[fk]) {
+        if (!userFecha[uid]) userFecha[uid] = {};
+        userFecha[uid][fk] = 0;
+      }
+    });
+  });
+
+  const uids = Object.keys(userFecha).filter(uid => {
+    return !state.selectedPagosUser || uid === state.selectedPagosUser;
+  });
+
+  if (Object.keys(userFecha).length) {
+    html += `<select class="filter-select" data-action="filter-pagos">
+      <option value="">Todos los participantes</option>`;
+    Object.keys(userFecha).forEach(uid => {
+      html += `<option value="${esc(uid)}" ${state.selectedPagosUser === uid ? 'selected' : ''}>${esc(state.usersMap[uid] || uid.slice(0,8))}</option>`;
+    });
+    html += `</select>`;
+  }
+
+  if (!uids.length) {
+    html += `<div class="alert alert-info">Sin pagos pendientes</div>`;
+  } else {
+    uids.forEach(uid => {
+      const fechas = Object.keys(userFecha[uid]);
+      const total = fechas.length * state.fechaPrice;
+      html += `<div class="group-section">
+        <h2 class="group-title" style="cursor:pointer" data-action="toggle-user" data-uid="${esc(uid)}">
+          ${esc(state.usersMap[uid] || uid.slice(0,8))} — $${total.toLocaleString()}
+          <span style="float:right;font-size:0.85rem;color:#78909c">${state.expandedUser === uid ? '▲' : '▼'}</span>
+        </h2>`;
+      if (state.expandedUser === uid) {
+        fechas.forEach(fk => {
+          const label = fk === 'elim' ? 'Eliminatorias' : 'Fecha ' + fk;
+          html += `<div class="match-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+            <span><strong>${label}</strong></span>
+            <button class="btn btn-success btn-sm" data-action="confirm-fecha-pay" data-uid="${esc(uid)}" data-fecha="${esc(fk)}">✅ Confirmar pago $${state.fechaPrice.toLocaleString()}</button>
+          </div>`;
+        });
+      }
+      html += `</div>`;
+    });
+  }
+
+  html += `<div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #1e3a4a">
+    <button class="btn btn-warning btn-sm" data-action="reset-my-pagos">🔄 Resetear mis pagos</button>
+    <span style="color:#ffd54f;font-size:0.75rem;margin-left:0.5rem">Pone tus fechas como impagas (para probar)</span>
+  </div>`;
+  html += `</div>`;
   return html;
 }
 

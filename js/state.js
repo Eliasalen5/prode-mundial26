@@ -6,13 +6,25 @@ const state = {
   error: '',
   collapsedGroups: { fecha_1: false, fecha_2: false, fecha_3: false, fecha_elim: false },
   adminScores: {},
+  fechaPaid: { '1': false, '2': false, '3': false, 'elim': false },
+  fechaPrice: 15000,
+  fechaStatus: {},
+  usersMap: {},
+  selectedPagosUser: '',
+  notifications: [],
+  lastNotifCount: 0,
+  expandedUser: null,
 };
 
 let unsubScores = null;
+let unsubPagos = null;
+let unsubNotifications = null;
 let currentPage = '';
 
 function cleanupListeners() {
   if (unsubScores) { unsubScores(); unsubScores = null; }
+  if (unsubPagos) { unsubPagos(); unsubPagos = null; }
+  if (unsubNotifications) { unsubNotifications(); unsubNotifications = null; }
 }
 
 function getPage() {
@@ -26,5 +38,3 @@ function navigate(path) {
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
-

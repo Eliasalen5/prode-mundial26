@@ -28,6 +28,27 @@ function initMatches() {
   }
 }
 
+let _cachedUsersMap = null;
+
+// ============================================================
+// CACHED USERS (for admin pagos)
+// ============================================================
+function loadCachedUsers() {
+  if (_cachedUsersMap) {
+    state.usersMap = Object.assign({}, _cachedUsersMap);
+  } else {
+    db.collection('users').get().then(snap => {
+      state.usersMap = {};
+      state.fechaStatus = {};
+      snap.docs.forEach(d => {
+        state.usersMap[d.id] = d.data().username;
+        state.fechaStatus[d.id] = d.data().fechaPaid || {};
+      });
+      _cachedUsersMap = Object.assign({}, state.usersMap);
+    }).catch(() => {});
+  }
+}
+
 // ============================================================
 // ADMIN: SAVE / CLEAR RESULTS
 // ============================================================
@@ -74,6 +95,55 @@ async function handleClearResult(matchId) {
   }
 }
 
+// ============================================================
+// PAYMENT HANDLERS
+// ============================================================
+function handlePayFecha(fechaKey) {
+  if (state.fechaPaid[fechaKey]) return;
+  const label = fechaKey === 'elim' ? 'Eliminatorias' : 'Fecha ' + fechaKey;
+  const username = state.userData?.username || state.user?.email || 'Usuario';
+  const msg = encodeURIComponent(
+    `Hola Elias, soy ${username}. Te voy a transferir $${state.fechaPrice.toLocaleString()} para ${label}, ahora te paso el comprobante.`
+  );
+  window.open(`https://wa.me/543329300352?text=${msg}`, '_blank');
+}
+
+async function handleConfirmFechaPay(uid, fechaKey) {
+  try {
+    await db.collection('users').doc(uid).update({ [`fechaPaid.${fechaKey}`]: true });
+    if (state.user?.uid === uid) state.fechaPaid[fechaKey] = true;
+    if (!state.fechaStatus[uid]) state.fechaStatus[uid] = {};
+    state.fechaStatus[uid][fechaKey] = true;
+    const username = state.usersMap[uid] || uid.slice(0, 8);
+    const isElim = fechaKey === 'elim';
+    const fechaLabel = isElim ? 'Eliminatorias' : 'Fecha ' + fechaKey;
+    await db.collection('notifications').add({
+      userId: uid,
+      message: `✅ Pago confirmado para ${fechaLabel} ($${state.fechaPrice.toLocaleString()}). Ya podés cargar tus pronósticos.`,
+      read: false,
+      createdAt: new Date(),
+    });
+    showToast(`✅ ${fechaLabel} confirmado para ${username}`);
+    render();
+  } catch (e) {
+    showToast('❌ Error: ' + e.message);
+  }
+}
+
+async function handleResetMyPagos() {
+  if (!state.user) return;
+  try {
+    await db.collection('users').doc(state.user.uid).update({
+      fechaPaid: { '1': false, '2': false, '3': false, 'elim': false }
+    });
+    state.fechaPaid = { '1': false, '2': false, '3': false, 'elim': false };
+    showToast('🔄 Tus fechas ahora están como impagas');
+    render();
+  } catch (e) {
+    showToast('❌ Error: ' + e.message);
+  }
+}
+
 function showToast(msg) {
   const existing = document.getElementById('toast-container');
   if (existing) existing.remove();
@@ -104,8 +174,27 @@ document.getElementById('root').addEventListener('click', (e) => {
     state.collapsedGroups[key] = !state.collapsedGroups[key];
     render();
   }
+  else if (action === 'pay-fecha') handlePayFecha(e.target.dataset.fecha);
+  else if (action === 'confirm-fecha-pay') handleConfirmFechaPay(e.target.dataset.uid, e.target.dataset.fecha);
+  else if (action === 'reset-my-pagos') handleResetMyPagos();
   else if (action === 'save-result') handleSaveResult(e.target.dataset.matchId);
   else if (action === 'clear-result') handleClearResult(e.target.dataset.matchId);
+  else if (action === 'toggle-user') {
+    const row = e.target.closest('[data-uid]');
+    if (!row) return;
+    const uid = row.dataset.uid;
+    state.expandedUser = state.expandedUser === uid ? null : uid;
+    render();
+  }
+  else if (action === 'mark-all-notif-read') {
+    state.notifications.filter(n => !n.read).forEach(n => {
+      db.collection('notifications').doc(n.id).update({ read: true });
+    });
+  }
+  else if (action === 'mark-notif-read') {
+    const id = e.target.closest('[data-notif-id]')?.dataset.notifId;
+    if (id) db.collection('notifications').doc(id).update({ read: true });
+  }
 });
 
 document.getElementById('root').addEventListener('input', (e) => {
@@ -117,6 +206,14 @@ document.getElementById('root').addEventListener('input', (e) => {
     if (!state.adminScores[matchId]) state.adminScores[matchId] = { home: '', away: '' };
     if (action === 'admin-score-home') state.adminScores[matchId].home = e.target.value;
     else state.adminScores[matchId].away = e.target.value;
+  }
+});
+
+document.getElementById('root').addEventListener('change', (e) => {
+  const action = e.target.dataset.action;
+  if (action === 'filter-pagos') {
+    state.selectedPagosUser = e.target.value;
+    render();
   }
 });
 
