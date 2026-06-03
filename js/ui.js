@@ -492,32 +492,38 @@ function buildNotificaciones() {
 function buildAdminPagos() {
   let html = `<div class="container"><h1>💵 Pagos Pendientes</h1>`;
 
-  const userFecha = {};
+  // Contar predicciones pendientes por usuario+fecha
+  const predCount = {};
   state.pendingPagos.forEach(p => {
     if (!state.usersMap[p.userId]) return;
     const m = getMatchById(p.matchId);
     if (!m) return;
     const fk = m.stage === 'knockout' ? 'elim' : String(m.matchday);
-    if (!userFecha[p.userId]) userFecha[p.userId] = {};
-    if (!userFecha[p.userId][fk]) userFecha[p.userId][fk] = [];
-    userFecha[p.userId][fk].push(p);
+    if (!predCount[p.userId]) predCount[p.userId] = {};
+    predCount[p.userId][fk] = (predCount[p.userId][fk] || 0) + 1;
   });
-  // Filtrar fechas ya pagadas
-  Object.keys(userFecha).forEach(uid => {
-    Object.keys(userFecha[uid]).forEach(fk => {
-      if (state.fechaStatus[uid]?.[fk]) delete userFecha[uid][fk];
+
+  // Armar lista de usuarios con fechas impagas
+  const userFecha = {};
+  Object.keys(state.usersMap).forEach(uid => {
+    const fs = state.fechaStatus[uid] || {};
+    ['1', '2', '3', 'elim'].forEach(fk => {
+      if (!fs[fk]) {
+        if (!userFecha[uid]) userFecha[uid] = {};
+        userFecha[uid][fk] = predCount[uid]?.[fk] || 0;
+      }
     });
   });
+
   const uids = Object.keys(userFecha).filter(uid => {
     return !state.selectedPagosUser || uid === state.selectedPagosUser;
   });
 
   // Filter
-  const allUids = Object.keys(userFecha);
-  if (allUids.length) {
+  if (Object.keys(userFecha).length) {
     html += `<select class="filter-select" data-action="filter-pagos">
       <option value="">Todos los participantes</option>`;
-    allUids.forEach(uid => {
+    Object.keys(userFecha).forEach(uid => {
       html += `<option value="${esc(uid)}" ${state.selectedPagosUser === uid ? 'selected' : ''}>${esc(state.usersMap[uid] || uid.slice(0,8))}</option>`;
     });
     html += `</select>`;
@@ -528,7 +534,7 @@ function buildAdminPagos() {
   } else {
     uids.forEach(uid => {
       const fechas = Object.keys(userFecha[uid]);
-      const total = fechas.reduce((s, fk) => s + state.fechaPrice, 0);
+      const total = fechas.length * state.fechaPrice;
       html += `<div class="group-section">
         <h2 class="group-title" style="cursor:pointer" data-action="toggle-user" data-uid="${esc(uid)}">
           ${esc(state.usersMap[uid] || uid.slice(0,8))} — $${total.toLocaleString()}
@@ -536,10 +542,10 @@ function buildAdminPagos() {
         </h2>`;
       if (state.expandedUser === uid) {
         fechas.forEach(fk => {
-          const preds = userFecha[uid][fk];
+          const count = userFecha[uid][fk];
           const label = fk === 'elim' ? 'Eliminatorias' : 'Fecha ' + fk;
           html += `<div class="match-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
-            <span><strong>${label}</strong> — ${preds.length} pronóstico${preds.length !== 1 ? 's' : ''}</span>
+            <span><strong>${label}</strong> — ${count} pronóstico${count !== 1 ? 's' : ''}</span>
             <button class="btn btn-success btn-sm" data-action="confirm-fecha-pay" data-uid="${esc(uid)}" data-fecha="${esc(fk)}">Confirmar pago $${state.fechaPrice.toLocaleString()}</button>
           </div>`;
         });
