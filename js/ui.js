@@ -528,6 +528,8 @@ function buildAdminResultados() {
     <span style="color:#78909c;font-size:0.75rem;margin-left:0.5rem">Elimina pronósticos de usuarios eliminados</span>
     <button class="btn btn-danger btn-sm" data-action="clean-all-preds" style="margin-left:0.5rem">🗑️ Limpiar TODAS las predicciones</button>
     <span style="color:#ef5350;font-size:0.75rem;margin-left:0.5rem">Elimina todo, todos los usuarios vuelven a empezar</span>
+    <button class="btn btn-warning btn-sm" data-action="reset-my-pagos" style="margin-left:0.5rem">🔄 Resetear mis pagos</button>
+    <span style="color:#ffd54f;font-size:0.75rem;margin-left:0.5rem">Pone tus fechas como impagas (para probar)</span>
   </div>`;
   html += `</div>`;
   return html;

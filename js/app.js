@@ -263,6 +263,20 @@ async function handleCleanAllPredictions() {
   }
 }
 
+async function handleResetMyPagos() {
+  if (!state.user) return;
+  try {
+    await db.collection('users').doc(state.user.uid).update({
+      fechaPaid: { '1': false, '2': false, '3': false, 'elim': false }
+    });
+    state.fechaPaid = { '1': false, '2': false, '3': false, 'elim': false };
+    showToast('🔄 Tus fechas ahora están como impagas');
+    render();
+  } catch (e) {
+    showToast('❌ Error: ' + e.message);
+  }
+}
+
 async function handleSaveResult(matchId) {
   const s = state.adminScores[matchId];
   if (!s || s.home === '' || s.away === '') return;
@@ -335,6 +349,7 @@ document.getElementById('root').addEventListener('click', (e) => {
     }
   }
   else if (action === 'clean-all-preds') handleCleanAllPredictions();
+  else if (action === 'reset-my-pagos') handleResetMyPagos();
   else if (action === 'mark-all-notif-read') {
     state.notifications.filter(n => !n.read).forEach(n => {
       db.collection('notifications').doc(n.id).update({ read: true });

@@ -116,6 +116,8 @@ h2 { font-size: 1rem; color: #b0bec5; margin-bottom: 0.5rem; }
 .btn-danger:hover { background: #e53935; }
 .btn-success { background: #4caf50; color: #fff; }
 .btn-success:hover { background: #388e3c; }
+.btn-warning { background: #ff9800; color: #fff; }
+.btn-warning:hover { background: #f57c00; }
 .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
 .btn-block { width: 100%; }
 .form-footer { text-align: center; font-size: 0.85rem; margin-top: 1rem; color: #78909c; }
