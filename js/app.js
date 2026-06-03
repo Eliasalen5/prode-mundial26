@@ -315,6 +315,27 @@ async function handleCleanAllPredictions() {
   }
 }
 
+async function handleCleanAllPayments() {
+  if (!confirm('¿Estás seguro? Se van a LIMPIAR TODOS los pagos de todos los usuarios.')) return;
+  if (!confirm('¿REALMENTE seguro? Todos los fechaPaid van a quedar en false.')) return;
+  try {
+    const usersSnap = await db.collection('users').get();
+    const batch = db.batch();
+    usersSnap.docs.forEach(d => {
+      batch.update(d.ref, { fechaPaid: { '1': false, '2': false, '3': false, 'elim': false } });
+    });
+    await batch.commit();
+    state.fechaPaid = { '1': false, '2': false, '3': false, 'elim': false };
+    state.fechaStatus = {};
+    state.pendingPagos = [];
+    _cachedUsersMap = null;
+    showToast(`🧹 Pagos limpiados para ${usersSnap.docs.length} usuarios`);
+    render();
+  } catch (e) {
+    showToast('❌ Error: ' + e.message);
+  }
+}
+
 async function handleSaveResult(matchId) {
   const s = state.adminScores[matchId];
   if (!s || s.home === '' || s.away === '') return;
@@ -388,6 +409,7 @@ document.getElementById('root').addEventListener('click', (e) => {
     }
   }
   else if (action === 'clean-all-preds') handleCleanAllPredictions();
+  else if (action === 'clean-all-pagos') handleCleanAllPayments();
   else if (action === 'mark-all-notif-read') {
     state.notifications.filter(n => !n.read).forEach(n => {
       db.collection('notifications').doc(n.id).update({ read: true });

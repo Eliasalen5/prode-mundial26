@@ -455,7 +455,10 @@ function buildNotificaciones() {
 }
 
 function buildAdminPagos() {
-  let html = `<div class="container"><h1>💵 Pagos Pendientes</h1>`;
+  let html = `<div class="container"><h1>💵 Pagos Pendientes</h1>
+    <div style="margin-bottom:1rem">
+      <button class="btn btn-danger" data-action="clean-all-pagos">🧹 Limpiar TODOS los pagos</button>
+    </div>`;
 
   // Contar predicciones pendientes por usuario+fecha
   const predCount = {};
