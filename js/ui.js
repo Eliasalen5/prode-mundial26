@@ -12,6 +12,7 @@ function buildNavbar() {
     <div class="navbar-links">
       <a href="#/" class="${getPage() === '/' ? 'active' : ''}">🏠 Fixture</a>
       <a href="#/grupos" class="${getPage() === '/grupos' ? 'active' : ''}">📋 Grupos</a>
+      <a href="#/pronosticos" class="${getPage() === '/pronosticos' ? 'active' : ''}">📝 Pronósticos</a>
       <a href="#/notificaciones" class="${getPage() === '/notificaciones' ? 'active' : ''}">🔔 Notificaciones${unread ? ` <span class="notif-badge">${unread}</span>` : ''}</a>`;
   if (isAdmin) {
     html += `<a href="#/admin/pagos" class="${getPage() === '/admin/pagos' ? 'active' : ''}">💵 Pagos</a>`;
@@ -164,20 +165,44 @@ function buildHome() {
 
 function buildMatchCard(m, isLocked) {
   const hasResult = m.homeScore != null;
+  const pred = state.predictions[m.id];
+  const now = new Date();
+  const matchDate = m.matchDate?.toDate ? m.matchDate.toDate() : new Date(m.date);
+  const isTimeLocked = (matchDate.getTime() - now.getTime()) < 10 * 60 * 1000;
 
-  let html = `<div class="match-card${m.featured ? ' featured' : ''}${isLocked ? ' locked' : ''}">`;
+  let html = `<div class="match-card${m.featured ? ' featured' : ''}${(isLocked || (isTimeLocked && !hasResult)) ? ' locked' : ''}">`;
   html += `<div class="match-teams">
     ${teamHTML(m.homeTeam)}
     <span class="vs">vs</span>
     ${teamHTML(m.awayTeam)}
     ${m.featured ? '<span class="featured-badge">🔥 Destacado</span>' : ''}
   </div>`;
-  html += `<div class="match-info">${formatDate(new Date(m.date))}</div>`;
+  html += `<div class="match-info">${formatDate(matchDate)}</div>`;
 
   if (hasResult) {
     html += `<div class="match-score">${m.homeScore} - ${m.awayScore}</div>`;
+    if (pred && pred.points != null) {
+      const ptsColor = pred.points >= 3 ? '#4caf50' : pred.points >= 1 ? '#ffd54f' : '#78909c';
+      html += `<div style="font-size:0.8rem;color:${ptsColor};font-weight:700">+${pred.points} pts</div>`;
+    }
   } else if (isLocked) {
     html += `<span class="locked-badge">🔒</span>`;
+  } else if (state.user && !hasResult) {
+    if (isTimeLocked) {
+      if (pred) {
+        html += `<div class="match-pred">${pred.homeScore} - ${pred.awayScore} <span class="locked-badge">🔒</span></div>`;
+      } else {
+        html += `<div style="text-align:center;padding:0.5rem;color:#546e7a;font-size:0.8rem">🔒 Sin pronóstico</div>`;
+      }
+    } else {
+      const hs = state.homeScores[m.id] || (pred ? { home: pred.homeScore, away: pred.awayScore } : { home: '', away: '' });
+      html += `<div class="match-inputs">
+        <input type="number" min="0" max="20" data-action="home-score" data-match-id="${esc(m.id)}" value="${hs.home}" placeholder="0">
+        <span style="color:#546e7a">-</span>
+        <input type="number" min="0" max="20" data-action="away-score" data-match-id="${esc(m.id)}" value="${hs.away}" placeholder="0">
+        <button class="btn btn-primary btn-sm" data-action="save-prediction" data-match-id="${esc(m.id)}">Guardar</button>
+      </div>`;
+    }
   }
 
   html += `</div>`;
@@ -275,6 +300,61 @@ function buildNotificaciones() {
       </div>`;
     });
   }
+  html += `</div>`;
+  return html;
+}
+
+function buildPronosticos() {
+  let html = `<div class="container">
+    <h1>Mis Pronósticos</h1>`;
+
+  const preds = Object.values(state.predictions);
+  if (!preds.length) {
+    html += `<div class="alert alert-info">Todavía no cargaste ningún pronóstico. Andá al <a href="#/">Fixture</a> para empezar.</div>`;
+    html += `</div>`;
+    return html;
+  }
+
+  const matchdays = {};
+  preds.forEach(p => {
+    const m = state.matches.find(x => x.id === p.matchId);
+    const md = m?.matchday || '?';
+    if (!matchdays[md]) matchdays[md] = [];
+    matchdays[md].push({ ...p, match: m });
+  });
+  const mdKeys = Object.keys(matchdays).sort();
+
+  html += `<select class="filter-select" data-action="filter-pronosticos">
+    <option value="">Todas las fechas</option>`;
+  mdKeys.forEach(k => {
+    const label = isNaN(k) ? k : 'Fecha ' + k;
+    html += `<option value="${esc(k)}" ${state.selectedPronosticosFilter === k ? 'selected' : ''}>${label}</option>`;
+  });
+  html += `</select>`;
+
+  const filter = state.selectedPronosticosFilter || '';
+  mdKeys.forEach(k => {
+    if (filter && filter !== k) return;
+    const label = isNaN(k) ? k : '📅 Fecha ' + k;
+    html += `<div class="group-section"><h2 class="group-title" style="cursor:default">${label}</h2>`;
+    const items = matchdays[k].sort((a, b) => (a.match?.matchDate?.toDate?.() || 0) - (b.match?.matchDate?.toDate?.() || 0));
+    items.forEach(p => {
+      const m = p.match;
+      if (!m) return;
+      const realScore = m.homeScore != null ? `${m.homeScore} - ${m.awayScore}` : '-';
+      html += `<div class="match-card">
+        <div class="match-teams">${teamHTML(m.homeTeam)} vs ${teamHTML(m.awayTeam)}</div>
+        <div class="match-pred">${p.homeScore} - ${p.awayScore}</div>
+        <div style="font-size:0.8rem;color:#90a4ae">→ ${realScore}</div>`;
+      if (p.points != null) {
+        const c = p.points >= 3 ? '#4caf50' : p.points >= 1 ? '#ffd54f' : '#78909c';
+        html += `<div style="font-size:0.85rem;color:${c};font-weight:700">+${p.points}</div>`;
+      }
+      html += `</div>`;
+    });
+    html += `</div>`;
+  });
+
   html += `</div>`;
   return html;
 }

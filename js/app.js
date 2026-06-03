@@ -96,6 +96,30 @@ async function handleClearResult(matchId) {
 }
 
 // ============================================================
+// PREDICTION HANDLER
+// ============================================================
+async function handleSavePrediction(matchId) {
+  if (!state.user) { showToast('❌ Iniciá sesión primero'); return; }
+  const s = state.homeScores[matchId];
+  if (!s || s.home === '' || s.away === '') { showToast('❌ Completá ambos puntajes'); return; }
+  try {
+    await db.collection('predictions').doc(state.user.uid + '_' + matchId).set({
+      userId: state.user.uid,
+      matchId: matchId,
+      homeScore: Number(s.home),
+      awayScore: Number(s.away),
+      paid: true,
+      status: 'submitted',
+      updatedAt: new Date(),
+    }, { merge: true });
+    showToast('✅ Pronóstico guardado');
+    render();
+  } catch (e) {
+    showToast('❌ Error: ' + e.message);
+  }
+}
+
+// ============================================================
 // PAYMENT HANDLERS
 // ============================================================
 function handlePayFecha(fechaKey) {
@@ -177,6 +201,7 @@ document.getElementById('root').addEventListener('click', (e) => {
   else if (action === 'pay-fecha') handlePayFecha(e.target.dataset.fecha);
   else if (action === 'confirm-fecha-pay') handleConfirmFechaPay(e.target.dataset.uid, e.target.dataset.fecha);
   else if (action === 'reset-my-pagos') handleResetMyPagos();
+  else if (action === 'save-prediction') handleSavePrediction(e.target.dataset.matchId);
   else if (action === 'save-result') handleSaveResult(e.target.dataset.matchId);
   else if (action === 'clear-result') handleClearResult(e.target.dataset.matchId);
   else if (action === 'mark-all-notif-read') {
@@ -200,12 +225,21 @@ document.getElementById('root').addEventListener('input', (e) => {
     if (action === 'admin-score-home') state.adminScores[matchId].home = e.target.value;
     else state.adminScores[matchId].away = e.target.value;
   }
+  else if (action === 'home-score' || action === 'away-score') {
+    if (!state.homeScores[matchId]) state.homeScores[matchId] = { home: '', away: '' };
+    if (action === 'home-score') state.homeScores[matchId].home = e.target.value;
+    else state.homeScores[matchId].away = e.target.value;
+  }
 });
 
 document.getElementById('root').addEventListener('change', (e) => {
   const action = e.target.dataset.action;
   if (action === 'filter-pagos') {
     state.selectedPagosUser = e.target.value;
+    render();
+  }
+  else if (action === 'filter-pronosticos') {
+    state.selectedPronosticosFilter = e.target.value;
     render();
   }
 });

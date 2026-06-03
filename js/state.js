@@ -13,17 +13,21 @@ const state = {
   selectedPagosUser: '',
   notifications: [],
   lastNotifCount: 0,
+  predictions: {},
+  homeScores: {},
 };
 
 let unsubScores = null;
 let unsubPagos = null;
 let unsubNotifications = null;
+let unsubPredictions = null;
 let currentPage = '';
 
 function cleanupListeners() {
   if (unsubScores) { unsubScores(); unsubScores = null; }
   if (unsubPagos) { unsubPagos(); unsubPagos = null; }
   if (unsubNotifications) { unsubNotifications(); unsubNotifications = null; }
+  if (unsubPredictions) { unsubPredictions(); unsubPredictions = null; }
 }
 
 function getPage() {
