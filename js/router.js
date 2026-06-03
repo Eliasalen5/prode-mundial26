@@ -19,7 +19,7 @@ function render() {
     navigate('/');
     return;
   }
-  if (['/admin/pagos','/admin/resultados','/admin/historial'].includes(page) && state.userData?.role !== 'admin') {
+  if (['/admin/resultados'].includes(page) && state.userData?.role !== 'admin') {
     cleanupListeners();
     currentPage = '/';
     navigate('/');
@@ -37,10 +37,8 @@ function render() {
   else if (page === '/pronosticos') content = buildPronosticos();
   else if (page === '/posiciones') content = buildPosiciones();
   else if (page === '/notificaciones') content = buildNotificaciones();
-  else if (page === '/admin/pagos') content = buildAdminPagos();
   else if (page === '/admin/resultados') content = buildAdminResultados();
-   else if (page === '/admin/historial') content = buildAdminHistorial();
-   else content = buildHome();
+  else content = buildHome();
 
   document.getElementById('root').innerHTML = buildNavbar() + '<main class="main-content">' + content + '</main>';
 
@@ -62,25 +60,6 @@ function render() {
     });
   }
 
-  // Admin pagos
-  if (page === '/admin/pagos' && !unsubPagos) {
-    loadCachedUsers();
-    unsubPagos = db.collection('predictions').where('paid', '==', false).onSnapshot((snap) => {
-      state.pendingPagos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      render();
-    });
-  }
-
-  // Admin historial
-  if (page === '/admin/historial' && !unsubPagos) {
-    loadCachedUsers();
-    unsubPagos = db.collection('predictions').where('paid', '==', true).onSnapshot((snap) => {
-      state.paidHistory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      render();
-    });
-  }
-
-
   // Posiciones (leaderboard)
   if (page === '/posiciones') {
     if (!unsubLeaderboard) {
@@ -89,11 +68,6 @@ function render() {
         if (getPage() === '/posiciones') render();
       });
     }
-  }
-
-  // Prize data for home
-  if (page === '/' && state.matches.length && !Object.keys(state.prizeData).length) {
-    loadPrizeData();
   }
 
   // Notification listener (always on)

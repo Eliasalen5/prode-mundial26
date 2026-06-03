@@ -4,7 +4,6 @@ auth.onAuthStateChanged(async (user) => {
     if (user) {
       const snap = await db.collection('users').doc(user.uid).get();
       state.userData = snap.exists ? snap.data() : null;
-      state.fechaPaid = snap.exists ? (snap.data().fechaPaid || { '1': false, '2': false, '3': false, 'elim': false }) : { '1': false, '2': false, '3': false, 'elim': false };
     } else {
       state.userData = null;
     }

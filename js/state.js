@@ -11,24 +11,15 @@ const state = {
   leaderboardMD: [],
   expandedLbKey: '',
   collapsedGroups: { fecha_1: false, fecha_2: false, fecha_3: false, fecha_elim: false },
-  pendingPagos: [],
-  paidHistory: [],
   usersMap: {},
   notifications: [],
   lastNotifCount: 0,
-  selectedHistorialUser: '',
-  selectedPagosUser: '',
   selectedLeaderboardUser: '',
   selectedPronosticosFilter: '',
-  prizeData: {},
   error: '',
-  fechaPaid: { '1': false, '2': false, '3': false, 'elim': false },
-  fechaPrice: 15000,
-  fechaStatus: {},
 };
 
 let unsubScores = null;
-let unsubPagos = null;
 let unsubNotifications = null;
 let unsubPredictions = null;
 let unsubLeaderboard = null;
@@ -36,7 +27,6 @@ let currentPage = '';
 
 function cleanupListeners() {
   if (unsubScores) { unsubScores(); unsubScores = null; }
-  if (unsubPagos) { unsubPagos(); unsubPagos = null; }
   if (unsubNotifications) { unsubNotifications(); unsubNotifications = null; }
   if (unsubPredictions) { unsubPredictions(); unsubPredictions = null; }
   if (unsubLeaderboard) { unsubLeaderboard(); unsubLeaderboard = null; }

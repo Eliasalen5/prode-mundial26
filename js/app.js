@@ -30,26 +30,7 @@ function initMatches() {
   }
 }
 
-// ============================================================
-// CACHED USERS
-// ============================================================
 let _cachedUsersMap = null;
-
-function loadCachedUsers() {
-  if (_cachedUsersMap) {
-    state.usersMap = Object.assign({}, _cachedUsersMap);
-  } else {
-    db.collection('users').get().then(snap => {
-      state.usersMap = {};
-      state.fechaStatus = {};
-      snap.docs.forEach(d => {
-        state.usersMap[d.id] = d.data().username;
-        state.fechaStatus[d.id] = d.data().fechaPaid || {};
-      });
-      _cachedUsersMap = Object.assign({}, state.usersMap);
-    }).catch(() => {});
-  }
-}
 
 // ============================================================
 // LEADERBOARD
@@ -83,7 +64,6 @@ async function rebuildLeaderboard(predSnap) {
     state.leaderboardMD = categories.map(cat => {
       const catPoints = {};
       state.allPredictions.forEach(p => {
-        if (!p.paid) return;
         if (!cat.matchdays.includes(p.matchday)) return;
         catPoints[p.userId] = (catPoints[p.userId] || 0) + (p.points || 0);
       });
@@ -117,56 +97,9 @@ async function loadPredictionsForUser(uid) {
   }
 }
 
-async function loadPrizeData() {
-  if (Object.keys(state.prizeData).length) return;
-  try {
-    const snap = await db.collection('users').get();
-    const counts = { '1': 0, '2': 0, '3': 0, 'elim': 0 };
-    snap.docs.forEach(d => {
-      const fp = d.data().fechaPaid || {};
-      ['1', '2', '3', 'elim'].forEach(f => { if (fp[f]) counts[f]++; });
-    });
-    state.prizeData = {};
-    ['1', '2', '3', 'elim'].forEach(f => {
-      state.prizeData[f] = Math.round(counts[f] * state.fechaPrice * 0.9);
-    });
-    render();
-  } catch (_) {}
-}
-
 // ============================================================
 // BUSINESS HANDLERS
 // ============================================================
-function handlePay() {
-  const lines = [];
-  let total = 0;
-  [1, 2, 3].forEach(f => {
-    if (state.fechaPaid[f]) return;
-    lines.push(`- Fecha ${f} ($${state.fechaPrice.toLocaleString()})`);
-    total += state.fechaPrice;
-  });
-  if (!state.fechaPaid['elim']) {
-    lines.push(`- Eliminatorias ($${state.fechaPrice.toLocaleString()})`);
-    total += state.fechaPrice;
-  }
-  if (!lines.length) return;
-  const username = state.userData?.username || state.user?.email || 'Usuario';
-  const msg = encodeURIComponent(
-    `Hola Elias, soy ${username}. Te voy a transferir $${total} por estas fechas:\n\n${lines.join('\n')}\n\nAlias: Eliasalen5 — Ahora te mando el comprobante.`
-  );
-  window.open(`https://wa.me/543329300352?text=${msg}`, '_blank');
-}
-
-function handlePayFecha(fechaKey) {
-  if (state.fechaPaid[fechaKey]) return;
-  const label = fechaKey === 'elim' ? 'Eliminatorias' : 'Fecha ' + fechaKey;
-  const username = state.userData?.username || state.user?.email || 'Usuario';
-  const msg = encodeURIComponent(
-    `Hola Elias, soy ${username}. Te voy a transferir $${state.fechaPrice.toLocaleString()} para ${label}.\n\nAlias: Eliasalen5 — Ahora te mando el comprobante.`
-  );
-  window.open(`https://wa.me/543329300352?text=${msg}`, '_blank');
-}
-
 async function handleSavePrediction(matchId) {
   if (!state.user) { showToast('⚠️ Iniciá sesión primero'); return; }
   const s = state.homeScores[matchId];
@@ -177,12 +110,6 @@ async function handleSavePrediction(matchId) {
   const matchDate = match.matchDate?.toDate ? match.matchDate.toDate() : new Date(match.date);
   if (matchDate.getTime() - Date.now() < 10 * 60 * 1000) {
     showToast('⏰ El partido ya está bloqueado (menos de 10 min)');
-    return;
-  }
-  const isKO = match.stage === 'knockout';
-  const fechaKey = isKO ? 'elim' : String(match.matchday);
-  if (!state.fechaPaid[fechaKey]) {
-    showToast(`🔒 Pagá $${state.fechaPrice.toLocaleString()} para ${isKO ? 'Eliminatorias' : 'Fecha ' + match.matchday} primero`);
     return;
   }
   try {
@@ -201,43 +128,6 @@ async function handleSavePrediction(matchId) {
     render();
   } catch (e) {
     showToast('❌ Error al guardar: ' + e.message);
-  }
-}
-
-async function handleConfirmFechaPay(uid, fechaKey) {
-  try {
-    const updateField = {};
-    updateField[`fechaPaid.${fechaKey}`] = true;
-    await db.collection('users').doc(uid).update(updateField);
-    const predSnap = await db.collection('predictions').where('userId', '==', uid).get();
-    const batch = db.batch();
-    const isElim = fechaKey === 'elim';
-    predSnap.docs.forEach(d => {
-      const p = d.data();
-      const m = getMatchById(p.matchId);
-      if (!m) return;
-      if (isElim && m.stage === 'knockout') {
-        batch.update(d.ref, { paid: true, status: 'unlocked' });
-      } else if (!isElim && m.matchday === Number(fechaKey)) {
-        batch.update(d.ref, { paid: true, status: 'unlocked' });
-      }
-    });
-    await batch.commit();
-    if (state.user?.uid === uid) state.fechaPaid[fechaKey] = true;
-    if (!state.fechaStatus[uid]) state.fechaStatus[uid] = {};
-    state.fechaStatus[uid][fechaKey] = true;
-    const username = state.usersMap[uid] || uid.slice(0, 8);
-    const fechaLabel = isElim ? 'Eliminatorias' : 'Fecha ' + fechaKey;
-    await db.collection('notifications').add({
-      userId: uid,
-      message: `Tu pago para ${fechaLabel} ($${state.fechaPrice.toLocaleString()}) fue confirmado. Ya podés sumar puntos.`,
-      read: false,
-      createdAt: new Date(),
-    });
-    showToast(`✅ ${fechaLabel} confirmado para ${username}`);
-    render();
-  } catch (e) {
-    showToast('❌ Error: ' + e.message);
   }
 }
 
@@ -315,27 +205,6 @@ async function handleCleanAllPredictions() {
   }
 }
 
-async function handleCleanAllPayments() {
-  if (!confirm('¿Estás seguro? Se van a LIMPIAR TODOS los pagos de todos los usuarios.')) return;
-  if (!confirm('¿REALMENTE seguro? Todos los fechaPaid van a quedar como pagados.')) return;
-  try {
-    const usersSnap = await db.collection('users').get();
-    const batch = db.batch();
-    usersSnap.docs.forEach(d => {
-      batch.update(d.ref, { fechaPaid: { '1': true, '2': true, '3': true, 'elim': true } });
-    });
-    await batch.commit();
-    state.fechaPaid = { '1': true, '2': true, '3': true, 'elim': true };
-    state.fechaStatus = {};
-    state.pendingPagos = [];
-    _cachedUsersMap = null;
-    showToast(`🧹 Pagos limpiados para ${usersSnap.docs.length} usuarios`);
-    render();
-  } catch (e) {
-    showToast('❌ Error: ' + e.message);
-  }
-}
-
 async function handleSaveResult(matchId) {
   const s = state.adminScores[matchId];
   if (!s || s.home === '' || s.away === '') return;
@@ -397,10 +266,7 @@ document.getElementById('root').addEventListener('click', (e) => {
   e.preventDefault();
 
   if (action === 'logout') handleLogout();
-  else if (action === 'pay') handlePay();
-  else if (action === 'pay-fecha') handlePayFecha(e.target.dataset.fecha);
   else if (action === 'save-prediction') handleSavePrediction(e.target.dataset.matchId);
-  else if (action === 'confirm-fecha-pay') handleConfirmFechaPay(e.target.dataset.uid, e.target.dataset.fecha);
   else if (action === 'save-result') handleSaveResult(e.target.dataset.matchId);
   else if (action === 'clear-result') handleClearResult(e.target.dataset.matchId);
   else if (action === 'clean-orphans') {
@@ -409,7 +275,6 @@ document.getElementById('root').addEventListener('click', (e) => {
     }
   }
   else if (action === 'clean-all-preds') handleCleanAllPredictions();
-  else if (action === 'clean-all-pagos') handleCleanAllPayments();
   else if (action === 'mark-all-notif-read') {
     state.notifications.filter(n => !n.read).forEach(n => {
       db.collection('notifications').doc(n.id).update({ read: true });
@@ -461,14 +326,6 @@ document.getElementById('root').addEventListener('submit', (e) => {
 
 document.getElementById('root').addEventListener('change', (e) => {
   const action = e.target.dataset.action;
-  if (action === 'filter-historial') {
-    state.selectedHistorialUser = e.target.value;
-    render();
-  }
-  if (action === 'filter-pagos') {
-    state.selectedPagosUser = e.target.value;
-    render();
-  }
   if (action === 'filter-posiciones') {
     state.selectedLeaderboardUser = e.target.value;
     state.expandedLbKey = '';
