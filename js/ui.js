@@ -282,51 +282,39 @@ function buildNotificaciones() {
 function buildAdminPagos() {
   let html = `<div class="container"><h1>💵 Pagos Pendientes</h1>`;
 
-  const userFecha = {};
+  const rows = [];
   Object.keys(state.usersMap).forEach(uid => {
     const fs = state.fechaStatus[uid] || {};
     ['1', '2', '3', 'elim'].forEach(fk => {
       if (!fs[fk]) {
-        if (!userFecha[uid]) userFecha[uid] = {};
-        userFecha[uid][fk] = 0;
+        rows.push({ uid, username: state.usersMap[uid] || uid.slice(0,8), fechaKey: fk });
       }
     });
   });
 
-  const uids = Object.keys(userFecha).filter(uid => {
-    return !state.selectedPagosUser || uid === state.selectedPagosUser;
-  });
-
-  if (Object.keys(userFecha).length) {
+  if (rows.length) {
     html += `<select class="filter-select" data-action="filter-pagos">
       <option value="">Todos los participantes</option>`;
-    Object.keys(userFecha).forEach(uid => {
-      html += `<option value="${esc(uid)}" ${state.selectedPagosUser === uid ? 'selected' : ''}>${esc(state.usersMap[uid] || uid.slice(0,8))}</option>`;
+    const seen = {};
+    rows.forEach(r => {
+      if (!seen[r.uid]) { seen[r.uid] = true;
+        html += `<option value="${esc(r.uid)}" ${state.selectedPagosUser === r.uid ? 'selected' : ''}>${esc(r.username)}</option>`;
+      }
     });
     html += `</select>`;
   }
 
-  if (!uids.length) {
+  const filtered = state.selectedPagosUser ? rows.filter(r => r.uid === state.selectedPagosUser) : rows;
+
+  if (!filtered.length) {
     html += `<div class="alert alert-info">Sin pagos pendientes</div>`;
   } else {
-    uids.forEach(uid => {
-      const fechas = Object.keys(userFecha[uid]);
-      const total = fechas.length * state.fechaPrice;
-      html += `<div class="group-section">
-        <h2 class="group-title" style="cursor:pointer" data-action="toggle-user" data-uid="${esc(uid)}">
-          ${esc(state.usersMap[uid] || uid.slice(0,8))} — $${total.toLocaleString()}
-          <span style="float:right;font-size:0.85rem;color:#78909c">${state.expandedUser === uid ? '▲' : '▼'}</span>
-        </h2>`;
-      if (state.expandedUser === uid) {
-        fechas.forEach(fk => {
-          const label = fk === 'elim' ? 'Eliminatorias' : 'Fecha ' + fk;
-          html += `<div class="match-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
-            <span><strong>${label}</strong></span>
-            <button class="btn btn-success btn-sm" data-action="confirm-fecha-pay" data-uid="${esc(uid)}" data-fecha="${esc(fk)}">✅ Confirmar pago $${state.fechaPrice.toLocaleString()}</button>
-          </div>`;
-        });
-      }
-      html += `</div>`;
+    filtered.forEach(r => {
+      const label = r.fechaKey === 'elim' ? 'Eliminatorias' : 'Fecha ' + r.fechaKey;
+      html += `<div class="match-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+        <span><strong>${esc(r.username)}</strong> — ${label}</span>
+        <button class="btn btn-success btn-sm" data-action="confirm-fecha-pay" data-uid="${esc(r.uid)}" data-fecha="${esc(r.fechaKey)}">✅ Confirmar pago $${state.fechaPrice.toLocaleString()}</button>
+      </div>`;
     });
   }
 

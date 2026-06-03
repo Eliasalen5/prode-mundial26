@@ -13,7 +13,6 @@ const state = {
   selectedPagosUser: '',
   notifications: [],
   lastNotifCount: 0,
-  expandedUser: null,
 };
 
 let unsubScores = null;

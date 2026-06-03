@@ -179,13 +179,6 @@ document.getElementById('root').addEventListener('click', (e) => {
   else if (action === 'reset-my-pagos') handleResetMyPagos();
   else if (action === 'save-result') handleSaveResult(e.target.dataset.matchId);
   else if (action === 'clear-result') handleClearResult(e.target.dataset.matchId);
-  else if (action === 'toggle-user') {
-    const row = e.target.closest('[data-uid]');
-    if (!row) return;
-    const uid = row.dataset.uid;
-    state.expandedUser = state.expandedUser === uid ? null : uid;
-    render();
-  }
   else if (action === 'mark-all-notif-read') {
     state.notifications.filter(n => !n.read).forEach(n => {
       db.collection('notifications').doc(n.id).update({ read: true });
