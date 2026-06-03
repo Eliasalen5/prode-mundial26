@@ -378,20 +378,25 @@ function buildPosiciones() {
   });
   html += `</select>`;
 
-  const preds = Object.values(state.allPredictions);
-  if (!preds.length) {
-    html += `<div class="alert alert-info">Todavía no hay pronósticos puntuados. Los puntajes aparecen cuando el admin cargue resultados.</div>`;
-    html += `</div>`;
-    return html;
-  }
+  // Users who paid for the selected fecha
+  const paidUsers = state.fechaStatus && Object.keys(state.fechaStatus).length
+    ? Object.keys(state.fechaStatus).filter(uid => {
+        if (!filter) return Object.values(state.fechaStatus[uid] || {}).some(v => v);
+        return state.fechaStatus[uid]?.[filter];
+      })
+    : [];
 
-  // Agrupar por userId
-  const userPoints = {};
-  preds.forEach(p => {
-    const m = state.matches.find(x => x.id === p.matchId);
-    if (!m) return;
+  // Match IDs for the selected fecha
+  const matchIdsInFecha = new Set();
+  state.matches.forEach(m => {
     const md = m.stage === 'knockout' ? 'elim' : String(m.matchday);
-    if (filter && filter !== md) return;
+    if (!filter || filter === md) matchIdsInFecha.add(m.id);
+  });
+
+  // Points from scored predictions
+  const userPoints = {};
+  Object.values(state.allPredictions).forEach(p => {
+    if (!matchIdsInFecha.has(p.matchId)) return;
     if (!userPoints[p.userId]) userPoints[p.userId] = { total: 0, predicted: 0, exactos: 0, parciales: 0 };
     userPoints[p.userId].total += p.points || 0;
     userPoints[p.userId].predicted++;
@@ -399,12 +404,18 @@ function buildPosiciones() {
     else if (p.points >= 1) userPoints[p.userId].parciales++;
   });
 
-  const sorted = Object.keys(userPoints)
-    .map(uid => ({ uid, ...userPoints[uid], username: state.usersMap[uid] || uid.slice(0, 8) }))
+  // Merge paying users + scored users
+  const allUids = new Set([...paidUsers, ...Object.keys(userPoints)]);
+  const sorted = Array.from(allUids)
+    .map(uid => ({
+      uid,
+      ...(userPoints[uid] || { total: 0, predicted: 0, exactos: 0, parciales: 0 }),
+      username: state.usersMap[uid] || uid.slice(0, 8),
+    }))
     .sort((a, b) => b.total - a.total);
 
   if (!sorted.length) {
-    html += `<div class="alert alert-info">Sin resultados para este filtro</div>`;
+    html += `<div class="alert alert-info">Aún no hay participantes. Cuando los usuarios paguen, aparecerán acá.</div>`;
     html += `</div>`;
     return html;
   }

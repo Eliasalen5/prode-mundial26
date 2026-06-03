@@ -45,6 +45,7 @@ function loadCachedUsers() {
         state.fechaStatus[d.id] = d.data().fechaPaid || {};
       });
       _cachedUsersMap = Object.assign({}, state.usersMap);
+      render();
     }).catch(() => {});
   }
 }
