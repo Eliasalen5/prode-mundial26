@@ -10,13 +10,13 @@ function getSeedData() {
     const m = month || '06';
     const dateStr = '2026-' + m + '-' + String(d).padStart(2,'0') + 'T' + t + ':00-03:00';
     const i = data.length + 1;
-    data.push({ id:'match_'+i, group, matchday:md, homeTeam:home, awayTeam:away, date:dateStr, featured:isFeatured(i), price:isFeatured(i)?1000:500, stage:'group' });
+    data.push({ id:'match_'+i, group, matchday:md, homeTeam:home, awayTeam:away, date:dateStr, featured:isFeatured(i), stage:'group' });
   }
 
   function addKO(m, d, t, home, away) {
     const dateStr = '2026-' + d + 'T' + t + ':00-03:00';
     const i = data.length + 1;
-    data.push({ id:'match_'+i, group:'', matchday:m, homeTeam:home, awayTeam:away, date:dateStr, featured:isFeatured(i), price:isFeatured(i)?1000:500, stage:'knockout' });
+    data.push({ id:'match_'+i, group:'', matchday:m, homeTeam:home, awayTeam:away, date:dateStr, featured:isFeatured(i), stage:'knockout' });
   }
 
   // ── FECHA 1 (24 partidos: 11–17 Jun) ──────────────────────────────

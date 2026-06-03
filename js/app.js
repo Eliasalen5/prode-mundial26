@@ -41,10 +41,10 @@ function loadCachedUsers() {
   } else {
     db.collection('users').get().then(snap => {
       state.usersMap = {};
-      state.paseStatus = {};
+      state.fechaStatus = {};
       snap.docs.forEach(d => {
         state.usersMap[d.id] = d.data().username;
-        state.paseStatus[d.id] = d.data().eliminatoriasPaid || false;
+        state.fechaStatus[d.id] = d.data().fechaPaid || {};
       });
       _cachedUsersMap = Object.assign({}, state.usersMap);
     }).catch(() => {});
@@ -120,24 +120,16 @@ async function loadPredictionsForUser(uid) {
 async function loadPrizeData() {
   if (Object.keys(state.prizeData).length) return;
   try {
-    const snap = await db.collection('predictions').where('paid', '==', true).get();
-    const totals = { 1: 0, 2: 0, 3: 0 };
+    const snap = await db.collection('users').get();
+    const counts = { '1': 0, '2': 0, '3': 0, 'elim': 0 };
     snap.docs.forEach(d => {
-      const p = d.data();
-      const m = getMatchById(p.matchId);
-      if (m && [1, 2, 3].includes(m.matchday)) {
-        totals[m.matchday] += m.price ?? 500;
-      }
+      const fp = d.data().fechaPaid || {};
+      ['1', '2', '3', 'elim'].forEach(f => { if (fp[f]) counts[f]++; });
     });
-    // Eliminatorias: count users who paid the pase
-    const usersSnap = await db.collection('users').where('eliminatoriasPaid', '==', true).get();
-    const elimPozo = usersSnap.size * state.eliminatoriasPrice * 0.9;
-    state.prizeData = {
-      1: Math.round(totals[1] * 0.9),
-      2: Math.round(totals[2] * 0.9),
-      3: Math.round(totals[3] * 0.9),
-      elim: Math.round(elimPozo),
-    };
+    state.prizeData = {};
+    ['1', '2', '3', 'elim'].forEach(f => {
+      state.prizeData[f] = Math.round(counts[f] * state.fechaPrice * 0.9);
+    });
     render();
   } catch (_) {}
 }
@@ -146,29 +138,35 @@ async function loadPrizeData() {
 // BUSINESS HANDLERS
 // ============================================================
 function handlePay() {
-  const unpaid = Object.entries(state.predictions).filter(([, p]) => p.paid !== true);
-  const hasUnpaidElim = Object.entries(state.predictions).some(([, p]) => {
-    if (p.paid) return false;
-    const m = getMatchById(p.matchId);
-    return m && m.stage === 'knockout';
+  const lines = [];
+  let total = 0;
+  [1, 2, 3].forEach(f => {
+    if (state.fechaPaid[f]) return;
+    const has = Object.values(state.predictions).some(p => {
+      if (p.paid) return false;
+      const m = getMatchById(p.matchId);
+      return m && m.matchday === f;
+    });
+    if (has) {
+      lines.push(`- Fecha ${f} ($${state.fechaPrice.toLocaleString()})`);
+      total += state.fechaPrice;
+    }
   });
-  const needsPase = !state.eliminatoriasPaid && hasUnpaidElim;
-  if (unpaid.length === 0 && !needsPase) return;
-  const lines = unpaid.map(([matchId]) => {
-    const m = getMatchById(matchId);
-    return m ? `- ${m.homeTeam} vs ${m.awayTeam} ($${m.price})` : '';
-  }).filter(Boolean);
-  let total = unpaid.reduce((s, [matchId]) => {
-    const m = getMatchById(matchId);
-    return s + (m?.price ?? 500);
-  }, 0);
-  if (needsPase) {
-    lines.push(`- Pase Eliminatorias ($${state.eliminatoriasPrice})`);
-    total += state.eliminatoriasPrice;
+  if (!state.fechaPaid['elim']) {
+    const has = Object.values(state.predictions).some(p => {
+      if (p.paid) return false;
+      const m = getMatchById(p.matchId);
+      return m && m.stage === 'knockout';
+    });
+    if (has) {
+      lines.push(`- Eliminatorias ($${state.fechaPrice.toLocaleString()})`);
+      total += state.fechaPrice;
+    }
   }
+  if (!lines.length) return;
   const username = state.userData?.username || state.user?.email || 'Usuario';
   const msg = encodeURIComponent(
-    `Hola Elias, soy ${username}. Te voy a transferir $${total} por estos partidos:\n\n${lines.join('\n')}\n\nAlias: Eliasalen5 — Ahora te mando el comprobante.`
+    `Hola Elias, soy ${username}. Te voy a transferir $${total} por estas fechas:\n\n${lines.join('\n')}\n\nAlias: Eliasalen5 — Ahora te mando el comprobante.`
   );
   window.open(`https://wa.me/543329300352?text=${msg}`, '_blank');
 }
@@ -199,8 +197,10 @@ async function handleSavePrediction(matchId) {
       updatedAt: new Date(),
     }, { merge: true });
     await loadPredictionsForUser(state.user.uid);
-    if (match.stage === 'knockout' && !state.eliminatoriasPaid) {
-      showToast('🔒 Guardado. Necesitás el pase de eliminatorias ($10.000) para sumar puntos.');
+    const isKO = match.stage === 'knockout';
+    const fechaKey = isKO ? 'elim' : String(match.matchday);
+    if (!state.fechaPaid[fechaKey]) {
+      showToast(`🔒 Guardado. Necesitás pagar $${state.fechaPrice.toLocaleString()} para ${isKO ? 'Eliminatorias' : 'Fecha ' + match.matchday} para sumar puntos.`);
     } else {
       showToast('✅ Pronóstico guardado');
     }
@@ -210,53 +210,40 @@ async function handleSavePrediction(matchId) {
   }
 }
 
-async function handleConfirmPay(predId) {
+async function handleConfirmFechaPay(uid, fechaKey) {
   try {
-    const predSnap = await db.collection('predictions').doc(predId).get();
-    const pred = predSnap.data();
-    const match = getMatchById(pred.matchId);
-    const matchName = match ? `${match.homeTeam} vs ${match.awayTeam}` : pred.matchId;
-    await db.collection('predictions').doc(predId).update({ paid: true, status: 'unlocked' });
-    await db.collection('notifications').add({
-      userId: pred.userId,
-      message: `Tu pago para ${matchName} fue confirmado.`,
-      read: false,
-      createdAt: new Date(),
-    });
-    showToast('Pago confirmado');
-    render();
-  } catch (e) {
-    showToast('❌ Ocurrió un error, avisale a Elias');
-  }
-}
-
-async function handleConfirmPase(uid) {
-  try {
-    await db.collection('users').doc(uid).update({ eliminatoriasPaid: true });
-    // Mark all knockout predictions as paid
+    const updateField = {};
+    updateField[`fechaPaid.${fechaKey}`] = true;
+    await db.collection('users').doc(uid).update(updateField);
     const predSnap = await db.collection('predictions').where('userId', '==', uid).get();
     const batch = db.batch();
+    const isElim = fechaKey === 'elim';
     predSnap.docs.forEach(d => {
       const p = d.data();
       const m = getMatchById(p.matchId);
-      if (m && m.stage === 'knockout') {
+      if (!m) return;
+      if (isElim && m.stage === 'knockout') {
+        batch.update(d.ref, { paid: true, status: 'unlocked' });
+      } else if (!isElim && m.matchday === Number(fechaKey)) {
         batch.update(d.ref, { paid: true, status: 'unlocked' });
       }
     });
     await batch.commit();
-    if (state.user?.uid === uid) state.eliminatoriasPaid = true;
-    state.paseStatus[uid] = true;
+    if (state.user?.uid === uid) state.fechaPaid[fechaKey] = true;
+    if (!state.fechaStatus[uid]) state.fechaStatus[uid] = {};
+    state.fechaStatus[uid][fechaKey] = true;
     const username = state.usersMap[uid] || uid.slice(0, 8);
+    const fechaLabel = isElim ? 'Eliminatorias' : 'Fecha ' + fechaKey;
     await db.collection('notifications').add({
       userId: uid,
-      message: `Tu pase de eliminatorias ($10.000) fue confirmado. Ya podés pronosticar todos los partidos.`,
+      message: `Tu pago para ${fechaLabel} ($${state.fechaPrice.toLocaleString()}) fue confirmado. Ya podés sumar puntos.`,
       read: false,
       createdAt: new Date(),
     });
-    showToast(`✅ Pase confirmado para ${username}`);
+    showToast(`✅ ${fechaLabel} confirmado para ${username}`);
     render();
   } catch (e) {
-    showToast('❌ Error al confirmar pase: ' + e.message);
+    showToast('❌ Error: ' + e.message);
   }
 }
 
@@ -378,8 +365,7 @@ document.getElementById('root').addEventListener('click', (e) => {
   if (action === 'logout') handleLogout();
   else if (action === 'pay') handlePay();
   else if (action === 'save-prediction') handleSavePrediction(e.target.dataset.matchId);
-  else if (action === 'confirm-pay') handleConfirmPay(e.target.dataset.predId);
-  else if (action === 'confirm-pase') handleConfirmPase(e.target.dataset.uid);
+  else if (action === 'confirm-fecha-pay') handleConfirmFechaPay(e.target.dataset.uid, e.target.dataset.fecha);
   else if (action === 'save-result') handleSaveResult(e.target.dataset.matchId);
   else if (action === 'clear-result') handleClearResult(e.target.dataset.matchId);
   else if (action === 'clean-orphans') {
