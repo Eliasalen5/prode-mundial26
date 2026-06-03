@@ -622,6 +622,8 @@ function buildAdminResultados() {
   html += `<div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #1e3a4a">
     <button class="btn btn-danger btn-sm" data-action="clean-orphans">🧹 Limpiar predicciones huérfanas</button>
     <span style="color:#78909c;font-size:0.75rem;margin-left:0.5rem">Elimina pronósticos de usuarios eliminados</span>
+    <button class="btn btn-danger btn-sm" data-action="clean-all-preds" style="margin-left:0.5rem">🗑️ Limpiar TODAS las predicciones</button>
+    <span style="color:#ef5350;font-size:0.75rem;margin-left:0.5rem">Elimina todo, todos los usuarios vuelven a empezar</span>
   </div>`;
   html += `</div>`;
   return html;

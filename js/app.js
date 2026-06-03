@@ -298,6 +298,25 @@ async function handleCleanOrphanedPredictions() {
   }
 }
 
+async function handleCleanAllPredictions() {
+  if (!confirm('¿Estás seguro? Se van a ELIMINAR TODAS las predicciones de todos los usuarios.')) return;
+  if (!confirm('¿REALMENTE seguro? Esta acción no se puede deshacer.')) return;
+  try {
+    const predSnap = await db.collection('predictions').get();
+    const batch = db.batch();
+    const total = predSnap.docs.length;
+    predSnap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    state.predictions = {};
+    state.allPredictions = [];
+    _cachedUsersMap = null;
+    showToast(`🧹 Eliminadas ${total} predicciones`);
+    render();
+  } catch (e) {
+    showToast('❌ Error: ' + e.message);
+  }
+}
+
 async function handleSaveResult(matchId) {
   const s = state.adminScores[matchId];
   if (!s || s.home === '' || s.away === '') return;
@@ -370,6 +389,7 @@ document.getElementById('root').addEventListener('click', (e) => {
       handleCleanOrphanedPredictions();
     }
   }
+  else if (action === 'clean-all-preds') handleCleanAllPredictions();
   else if (action === 'mark-all-notif-read') {
     state.notifications.filter(n => !n.read).forEach(n => {
       db.collection('notifications').doc(n.id).update({ read: true });
