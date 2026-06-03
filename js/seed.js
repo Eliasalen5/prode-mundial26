@@ -20,7 +20,7 @@ function getSeedData() {
   }
 
   // ── FECHA 1 (24 partidos: 11–17 Jun) ──────────────────────────────
-  add(3,'20:16','México','Sudáfrica','A',1);
+  add(11,'16:00','México','Sudáfrica','A',1);
   add(11,'23:00','Corea del Sur','República Checa','A',1);
   add(12,'16:00','Canadá','Bosnia y Herzegovina','B',1);
   add(12,'22:00','Estados Unidos','Paraguay','D',1);
