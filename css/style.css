@@ -103,6 +103,8 @@ h2 { font-size: 1rem; color: #b0bec5; margin-bottom: 0.5rem; }
 }
 .btn-primary { background: #4fc3f7; color: #0a1628; }
 .btn-primary:hover { background: #29b6f6; }
+.btn-danger { background: #ef5350; color: #fff; }
+.btn-danger:hover { background: #e53935; }
 .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
 .btn-block { width: 100%; }
 .form-footer { text-align: center; font-size: 0.85rem; margin-top: 1rem; color: #78909c; }
@@ -150,6 +152,39 @@ h2 { font-size: 1rem; color: #b0bec5; margin-bottom: 0.5rem; }
 .match-card.featured { border: 2px solid #ff6f00; border-radius: 8px; margin: 4px 0; }
 .locked { opacity: 0.5; pointer-events: none; }
 .locked-badge { color: #78909c; font-size: 0.75rem; }
+
+/* Standings table */
+.standings-scroll {
+  overflow-x: auto;
+}
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.standings-table th {
+  padding: 0.4rem 0.3rem;
+  text-align: center;
+  color: #546e7a;
+  font-weight: 600;
+  border-bottom: 1px solid #1a2a3e;
+  white-space: nowrap;
+}
+.standings-table th:first-child { text-align: center; width: 24px; }
+.standings-table th:nth-child(2) { text-align: left; }
+.standings-table td {
+  padding: 0.4rem 0.3rem;
+  text-align: center;
+  border-bottom: 1px solid #1a2a3e;
+  white-space: nowrap;
+}
+.standings-table td:nth-child(2) { text-align: left; }
+.standings-table .pts-cell {
+  font-weight: 700;
+  color: #4fc3f7;
+}
+.standings-table .pos-1 td { background: rgba(255, 215, 0, 0.08); }
+.standings-table .pos-1 .pts-cell { color: #ffd54f; }
 
 /* Groups page */
 .grupos-grid {

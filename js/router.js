@@ -19,6 +19,12 @@ function render() {
     navigate('/');
     return;
   }
+  if (page === '/admin/resultados' && state.userData?.role !== 'admin') {
+    cleanupListeners();
+    currentPage = '/';
+    navigate('/');
+    return;
+  }
 
   if (page !== currentPage) {
     cleanupListeners();
@@ -29,6 +35,7 @@ function render() {
   if (page === '/login') content = buildLogin();
   else if (page === '/register') content = buildRegister();
   else if (page === '/grupos') content = buildGrupos();
+  else if (page === '/admin/resultados') content = buildAdminResultados();
   else content = buildHome();
 
   document.getElementById('root').innerHTML = buildNavbar() + '<main class="main-content">' + content + '</main>';

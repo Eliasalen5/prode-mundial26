@@ -1,16 +1,20 @@
 function buildNavbar() {
   const username = state.userData?.username || '';
+  const isAdmin = state.userData?.role === 'admin';
   let html = `<nav class="navbar">
     <div class="navbar-top">
       <span class="navbar-brand">⚽ Prode 2026</span>`;
   if (state.user) {
-    html += `<span class="navbar-user">${esc(username)} | <a href="#" data-action="logout">Salir</a></span>`;
+    html += `<span class="navbar-user">${esc(username)}${isAdmin ? ' 👑' : ''} | <a href="#" data-action="logout">Salir</a></span>`;
   }
   html += `</div>
     <div class="navbar-links">
       <a href="#/" class="${getPage() === '/' ? 'active' : ''}">🏠 Fixture</a>
-      <a href="#/grupos" class="${getPage() === '/grupos' ? 'active' : ''}">📋 Grupos</a>
-    </div>
+      <a href="#/grupos" class="${getPage() === '/grupos' ? 'active' : ''}">📋 Grupos</a>`;
+  if (isAdmin) {
+    html += `<a href="#/admin/resultados" class="${getPage() === '/admin/resultados' ? 'active' : ''}">📋 Resultados</a>`;
+  }
+  html += `</div>
   </nav>`;
   return html;
 }
@@ -160,12 +164,41 @@ function buildGrupos() {
   const groups = {};
   groupNames.forEach(g => groups[g] = new Set());
 
+  const groupMatches = {};
+  groupNames.forEach(g => groupMatches[g] = []);
+
   state.matches.forEach(m => {
     if (m.stage === 'group' && groups[m.group]) {
       groups[m.group].add(m.homeTeam);
       groups[m.group].add(m.awayTeam);
+      groupMatches[m.group].push(m);
     }
   });
+
+  function calcStandings(matches, teamsArr) {
+    const stats = {};
+    teamsArr.forEach(t => stats[t] = { pj:0, pg:0, pe:0, pp:0, gf:0, gc:0, dg:0, pts:0 });
+    matches.forEach(m => {
+      if (m.homeScore == null) return;
+      const h = m.homeTeam, a = m.awayTeam;
+      stats[h].pj++; stats[a].pj++;
+      stats[h].gf += m.homeScore; stats[h].gc += m.awayScore;
+      stats[a].gf += m.awayScore; stats[a].gc += m.homeScore;
+      if (m.homeScore > m.awayScore) {
+        stats[h].pg++; stats[a].pp++;
+        stats[h].pts += 3;
+      } else if (m.homeScore < m.awayScore) {
+        stats[a].pg++; stats[h].pp++;
+        stats[a].pts += 3;
+      } else {
+        stats[h].pe++; stats[a].pe++;
+        stats[h].pts++; stats[a].pts++;
+      }
+    });
+    Object.keys(stats).forEach(t => stats[t].dg = stats[t].gf - stats[t].gc);
+    return teamsArr.map(t => ({ name: t, ...stats[t] }))
+      .sort((a, b) => b.pts - a.pts || b.dg - a.dg || b.gf - a.gf);
+  }
 
   let html = `<div class="container"><h1>Fase de Grupos</h1>
     <div class="grupos-grid">`;
@@ -173,16 +206,118 @@ function buildGrupos() {
   groupNames.forEach(g => {
     const teams = Array.from(groups[g]).sort();
     if (!teams.length) return;
+    const standings = calcStandings(groupMatches[g], teams);
     html += `<div class="group-section grupo-card">
       <h2 class="group-title">Grupo ${g}</h2>
-      <div class="grupo-teams">`;
-    teams.forEach(t => {
-      html += `<div class="grupo-team">${teamHTML(t)}</div>`;
+      <div class="standings-scroll">
+      <table class="standings-table">
+        <thead><tr>
+          <th>#</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th>
+        </tr></thead><tbody>`;
+    standings.forEach((t, i) => {
+      html += `<tr class="${i === 0 && t.pts > 0 ? 'pos-1' : ''}">
+        <td>${i + 1}</td>
+        <td>${teamHTML(t.name)}</td>
+        <td>${t.pj}</td><td>${t.pg}</td><td>${t.pe}</td><td>${t.pp}</td>
+        <td>${t.gf}</td><td>${t.gc}</td><td>${t.dg}</td>
+        <td class="pts-cell">${t.pts}</td>
+      </tr>`;
     });
-    html += `</div></div>`;
+    html += `</tbody></table></div></div>`;
   });
 
+  if (groupNames.every(g => !Array.from(groups[g]).length)) {
+    html = `<div class="container"><h1>Fase de Grupos</h1>
+      <div class="alert alert-info">Cargando grupos...</div></div>`;
+  }
+
   html += `</div></div>`;
+  return html;
+}
+
+function buildAdminResultados() {
+  let html = `<div class="container"><h1>📋 Cargar Resultados</h1>`;
+  const ms = state.matches;
+  if (!ms.length) {
+    html += `<div class="alert alert-info">Cargando partidos...</div>`;
+  } else {
+    const fechas = { 1: [], 2: [], 3: [], elim: [] };
+    ms.forEach(m => {
+      if (m.stage === 'knockout') fechas.elim.push(m);
+      else fechas[m.matchday].push(m);
+    });
+
+    [1, 2, 3].forEach(f => {
+      if (!fechas[f].length) return;
+      html += `<div class="group-section">
+        <h2 class="group-title">📅 Fecha ${f}</h2>`;
+      fechas[f].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(m => {
+        html += buildAdminMatchRow(m);
+      });
+      html += `</div>`;
+    });
+
+    // Eliminatorias
+    const elimMatches = fechas.elim;
+    const allGroupsComplete = ms.filter(m => m.stage === 'group').every(m => m.homeScore != null);
+    const isLocked = !allGroupsComplete || !ms.filter(m => m.stage === 'group').length;
+    if (elimMatches.length) {
+      html += `<div class="group-section">
+        <h2 class="group-title">🏆 Eliminatorias ${isLocked ? '🔒' : ''}</h2>`;
+      if (isLocked) {
+        html += `<div style="padding:1rem;text-align:center;color:#546e7a;font-size:0.85rem">
+          <p>🔒 Bloqueado hasta que se carguen todos los resultados de la Fase de Grupos</p>
+        </div>`;
+        elimMatches.forEach(m => {
+          html += `<div class="match-card locked">
+            <div class="match-teams">${teamHTML(m.homeTeam)} vs ${teamHTML(m.awayTeam)}</div>
+            <div class="match-info">${formatDate(new Date(m.date))}</div>
+            <span class="locked-badge">🔒</span>
+          </div>`;
+        });
+      } else {
+        const elimGroups = {};
+        elimMatches.forEach(m => {
+          if (!elimGroups[m.matchday]) elimGroups[m.matchday] = [];
+          elimGroups[m.matchday].push(m);
+        });
+        ['16avos','8avos','Cuartos','Semis','3er puesto','Final'].forEach(key => {
+          if (elimGroups[key]) {
+            elimGroups[key].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(m => {
+              html += buildAdminMatchRow(m);
+            });
+          }
+        });
+      }
+      html += `</div>`;
+    }
+  }
+  html += `</div>`;
+  return html;
+}
+
+function buildAdminMatchRow(m) {
+  const hasResult = m.homeScore != null;
+  let html = `<div class="match-card${m.featured ? ' featured' : ''}">`;
+  html += `<div class="match-teams">
+    ${teamHTML(m.homeTeam)} <span class="vs">vs</span> ${teamHTML(m.awayTeam)}
+    ${m.featured ? '<span class="featured-badge">🔥</span>' : ''}
+  </div>`;
+
+  if (hasResult) {
+    html += `<div class="match-score">${m.homeScore} - ${m.awayScore}</div>
+      <button class="btn btn-danger btn-sm" data-action="clear-result" data-match-id="${esc(m.id)}">🗑️ Limpiar</button>`;
+  } else {
+    const s = state.adminScores[m.id] || { home: '', away: '' };
+    html += `<div class="match-inputs">
+      <input type="number" min="0" max="20" data-action="admin-score-home" data-match-id="${esc(m.id)}" value="${s.home}" placeholder="0" style="width:54px;padding:0.45rem 0.5rem;font-size:1rem">
+      <span style="color:#546e7a;font-size:1rem">-</span>
+      <input type="number" min="0" max="20" data-action="admin-score-away" data-match-id="${esc(m.id)}" value="${s.away}" placeholder="0" style="width:54px;padding:0.45rem 0.5rem;font-size:1rem">
+      <button class="btn btn-primary btn-sm" data-action="save-result" data-match-id="${esc(m.id)}">Guardar</button>
+    </div>`;
+  }
+
+  html += `</div>`;
   return html;
 }
 

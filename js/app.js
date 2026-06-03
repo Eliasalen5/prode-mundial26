@@ -28,6 +28,52 @@ function initMatches() {
   }
 }
 
+// ============================================================
+// ADMIN: SAVE / CLEAR RESULTS
+// ============================================================
+async function handleSaveResult(matchId) {
+  const s = state.adminScores[matchId];
+  if (!s || s.home === '' || s.away === '') return;
+  try {
+    await db.collection('matches').doc(matchId).set({
+      homeScore: Number(s.home),
+      awayScore: Number(s.away),
+      status: 'played',
+    }, { merge: true });
+    const idx = state.matches.findIndex(m => m.id === matchId);
+    if (idx !== -1) {
+      state.matches[idx].homeScore = Number(s.home);
+      state.matches[idx].awayScore = Number(s.away);
+      state.matches[idx].status = 'played';
+    }
+    showToast('✅ Resultado guardado');
+    render();
+  } catch (e) {
+    showToast('❌ Error: ' + e.message);
+  }
+}
+
+async function handleClearResult(matchId) {
+  if (!confirm('¿Eliminar resultado de este partido?')) return;
+  try {
+    await db.collection('matches').doc(matchId).update({
+      homeScore: null,
+      awayScore: null,
+      status: 'locked',
+    });
+    const idx = state.matches.findIndex(m => m.id === matchId);
+    if (idx !== -1) {
+      state.matches[idx].homeScore = null;
+      state.matches[idx].awayScore = null;
+      state.matches[idx].status = 'locked';
+    }
+    showToast('🧹 Resultado limpiado');
+    render();
+  } catch (e) {
+    showToast('❌ Error: ' + e.message);
+  }
+}
+
 function showToast(msg) {
   const existing = document.getElementById('toast-container');
   if (existing) existing.remove();
@@ -57,6 +103,20 @@ document.getElementById('root').addEventListener('click', (e) => {
     const key = el.dataset.key;
     state.collapsedGroups[key] = !state.collapsedGroups[key];
     render();
+  }
+  else if (action === 'save-result') handleSaveResult(e.target.dataset.matchId);
+  else if (action === 'clear-result') handleClearResult(e.target.dataset.matchId);
+});
+
+document.getElementById('root').addEventListener('input', (e) => {
+  const action = e.target.dataset.action;
+  if (!action) return;
+  const matchId = e.target.dataset.matchId;
+  if (!matchId) return;
+  if (action === 'admin-score-home' || action === 'admin-score-away') {
+    if (!state.adminScores[matchId]) state.adminScores[matchId] = { home: '', away: '' };
+    if (action === 'admin-score-home') state.adminScores[matchId].home = e.target.value;
+    else state.adminScores[matchId].away = e.target.value;
   }
 });
 
