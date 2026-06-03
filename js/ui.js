@@ -138,11 +138,21 @@ function buildHome() {
     [1, 2, 3].forEach(f => {
       const key = 'fecha_' + f;
       const isOpen = state.collapsedGroups[key] === true;
+      const fechaNotPaid = state.user && !state.fechaPaid[f];
+      const hasPreds = Object.values(state.predictions).some(p => {
+        const m = getMatchById(p.matchId);
+        return m && m.matchday === f;
+      });
       html += `<div class="group-section">
         <h2 class="group-title" style="cursor:pointer" data-action="toggle-group" data-key="${esc(key)}">
           📅 Fecha ${f} <span style="float:right;font-size:0.85rem;color:#78909c">${isOpen ? '▲' : '▼'}</span>
         </h2>`;
       if (isOpen) {
+        if (fechaNotPaid && hasPreds) {
+          html += `<div style="text-align:center;padding:0.5rem">
+            <button class="btn btn-success btn-sm" data-action="pay">💳 Pagar $${state.fechaPrice.toLocaleString()} para Fecha ${f}</button>
+          </div>`;
+        }
         fechas[f].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(m => { html += buildMatchCard(m); });
       }
       html += `</div>`;
@@ -182,6 +192,16 @@ function buildHome() {
           </div>`;
         });
       } else {
+        const elimNotPaid = state.user && !state.fechaPaid['elim'];
+        const hasElimPreds = Object.values(state.predictions).some(p => {
+          const m = getMatchById(p.matchId);
+          return m && m.stage === 'knockout';
+        });
+        if (elimNotPaid && hasElimPreds) {
+          html += `<div style="text-align:center;padding:0.5rem">
+            <button class="btn btn-success btn-sm" data-action="pay">💳 Pagar $${state.fechaPrice.toLocaleString()} para Eliminatorias</button>
+          </div>`;
+        }
         const elimGroups = {};
         elimMatches.forEach(m => {
           if (!elimGroups[m.matchday]) elimGroups[m.matchday] = [];
