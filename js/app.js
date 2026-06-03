@@ -33,6 +33,25 @@ function initMatches() {
 let _cachedUsersMap = null;
 
 // ============================================================
+// CACHED USERS (for admin pagos)
+// ============================================================
+function loadCachedUsers() {
+  if (_cachedUsersMap) {
+    state.usersMap = Object.assign({}, _cachedUsersMap);
+  } else {
+    db.collection('users').get().then(snap => {
+      state.usersMap = {};
+      state.fechaStatus = {};
+      snap.docs.forEach(d => {
+        state.usersMap[d.id] = d.data().username;
+        state.fechaStatus[d.id] = d.data().fechaPaid || {};
+      });
+      _cachedUsersMap = Object.assign({}, state.usersMap);
+    }).catch(() => {});
+  }
+}
+
+// ============================================================
 // LEADERBOARD
 // ============================================================
 async function rebuildLeaderboard(predSnap) {
@@ -64,6 +83,7 @@ async function rebuildLeaderboard(predSnap) {
     state.leaderboardMD = categories.map(cat => {
       const catPoints = {};
       state.allPredictions.forEach(p => {
+        if (!p.paid) return;
         if (!cat.matchdays.includes(p.matchday)) return;
         catPoints[p.userId] = (catPoints[p.userId] || 0) + (p.points || 0);
       });
@@ -107,6 +127,12 @@ async function handleSavePrediction(matchId) {
 
   const match = getMatchById(matchId);
   if (!match) return;
+  const isKO = match.stage === 'knockout';
+  const fechaKey = isKO ? 'elim' : String(match.matchday);
+  if (!state.fechaPaid[fechaKey]) {
+    showToast(`🔒 Pagá $${state.fechaPrice.toLocaleString()} para ${isKO ? 'Eliminatorias' : 'Fecha ' + match.matchday} primero`);
+    return;
+  }
   const matchDate = match.matchDate?.toDate ? match.matchDate.toDate() : new Date(match.date);
   if (matchDate.getTime() - Date.now() < 10 * 60 * 1000) {
     showToast('⏰ El partido ya está bloqueado (menos de 10 min)');
@@ -128,6 +154,38 @@ async function handleSavePrediction(matchId) {
     render();
   } catch (e) {
     showToast('❌ Error al guardar: ' + e.message);
+  }
+}
+
+function handlePayFecha(fechaKey) {
+  if (state.fechaPaid[fechaKey]) return;
+  const label = fechaKey === 'elim' ? 'Eliminatorias' : 'Fecha ' + fechaKey;
+  const username = state.userData?.username || state.user?.email || 'Usuario';
+  const msg = encodeURIComponent(
+    `Hola Elias, soy ${username}. Te voy a transferir $${state.fechaPrice.toLocaleString()} para ${label}, ahora te paso el comprobante.`
+  );
+  window.open(`https://wa.me/543329300352?text=${msg}`, '_blank');
+}
+
+async function handleConfirmFechaPay(uid, fechaKey) {
+  try {
+    await db.collection('users').doc(uid).update({ [`fechaPaid.${fechaKey}`]: true });
+    if (state.user?.uid === uid) state.fechaPaid[fechaKey] = true;
+    if (!state.fechaStatus[uid]) state.fechaStatus[uid] = {};
+    state.fechaStatus[uid][fechaKey] = true;
+    const username = state.usersMap[uid] || uid.slice(0, 8);
+    const isElim = fechaKey === 'elim';
+    const fechaLabel = isElim ? 'Eliminatorias' : 'Fecha ' + fechaKey;
+    await db.collection('notifications').add({
+      userId: uid,
+      message: `✅ Pago confirmado para ${fechaLabel} ($${state.fechaPrice.toLocaleString()}). Ya podés cargar tus pronósticos.`,
+      read: false,
+      createdAt: new Date(),
+    });
+    showToast(`✅ ${fechaLabel} confirmado para ${username}`);
+    render();
+  } catch (e) {
+    showToast('❌ Error: ' + e.message);
   }
 }
 
@@ -266,8 +324,10 @@ document.getElementById('root').addEventListener('click', (e) => {
   e.preventDefault();
 
   if (action === 'logout') handleLogout();
+  else if (action === 'pay-fecha') handlePayFecha(e.target.dataset.fecha);
   else if (action === 'save-prediction') handleSavePrediction(e.target.dataset.matchId);
   else if (action === 'save-result') handleSaveResult(e.target.dataset.matchId);
+  else if (action === 'confirm-fecha-pay') handleConfirmFechaPay(e.target.dataset.uid, e.target.dataset.fecha);
   else if (action === 'clear-result') handleClearResult(e.target.dataset.matchId);
   else if (action === 'clean-orphans') {
     if (confirm('¿Eliminar todos los pronósticos de usuarios que ya no existen?')) {
@@ -326,6 +386,10 @@ document.getElementById('root').addEventListener('submit', (e) => {
 
 document.getElementById('root').addEventListener('change', (e) => {
   const action = e.target.dataset.action;
+  if (action === 'filter-pagos') {
+    state.selectedPagosUser = e.target.value;
+    render();
+  }
   if (action === 'filter-posiciones') {
     state.selectedLeaderboardUser = e.target.value;
     state.expandedLbKey = '';

@@ -10,6 +10,7 @@ function buildNavbar() {
     { href: '/notificaciones', label: '🔔 Notificaciones' + (unread ? ` <span class="notif-badge" id="notif-badge">${unread}</span>` : ''), admin: false },
   ];
   if (isAdmin) {
+    menu.push({ href: '/admin/pagos', label: '💵 Pagos', admin: true });
     menu.push({ href: '/admin/resultados', label: '📋 Resultados', admin: true });
   }
   let html = `<nav class="navbar">
@@ -99,11 +100,17 @@ function buildHome() {
     [1, 2, 3].forEach(f => {
       const key = 'fecha_' + f;
       const isOpen = state.collapsedGroups[key] === true;
+      const fechaNotPaid = state.user && !state.fechaPaid[f];
       html += `<div class="group-section">
         <h2 class="group-title" style="cursor:pointer" data-action="toggle-group" data-key="${esc(key)}">
           📅 Fecha ${f} <span style="float:right;font-size:0.85rem;color:#78909c">${isOpen ? '▲' : '▼'}</span>
         </h2>`;
       if (isOpen) {
+        if (fechaNotPaid) {
+          html += `<div style="text-align:center;padding:0.5rem">
+            <button class="btn btn-success btn-sm" data-action="pay-fecha" data-fecha="${f}">💵 Pagar $${state.fechaPrice.toLocaleString()} — Avisá por WhatsApp</button>
+          </div>`;
+        }
         fechas[f].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(m => { html += buildMatchCard(m); });
       }
       html += `</div>`;
@@ -134,6 +141,12 @@ function buildHome() {
           </div>`;
         });
       } else {
+        const elimNotPaid = state.user && !state.fechaPaid['elim'];
+        if (elimNotPaid) {
+          html += `<div style="text-align:center;padding:0.5rem">
+            <button class="btn btn-success btn-sm" data-action="pay-fecha" data-fecha="elim">💵 Pagar $${state.fechaPrice.toLocaleString()} — Avisá por WhatsApp</button>
+          </div>`;
+        }
         const elimGroups = {};
         elimMatches.forEach(m => {
           if (!elimGroups[m.matchday]) elimGroups[m.matchday] = [];
@@ -161,8 +174,11 @@ function buildMatchCard(m) {
   const now = new Date();
   const matchDate = m.matchDate?.toDate ? m.matchDate.toDate() : new Date(m.date);
   const isLocked = (matchDate.getTime() - now.getTime()) < 10 * 60 * 1000;
+  const isKO = m.stage === 'knockout';
+  const fechaKey = isKO ? 'elim' : String(m.matchday);
+  const fechaLocked = state.user && !state.fechaPaid[fechaKey];
 
-  let html = `<div class="match-card${(isLocked && !hasResult) ? ' locked' : ''}${isFeatured ? ' featured' : ''}">`;
+  let html = `<div class="match-card${((isLocked && !hasResult) || fechaLocked) ? ' locked' : ''}${isFeatured ? ' featured' : ''}">`;
   html += `<div class="match-teams">
     ${teamHTML(m.homeTeam)}
     <span class="vs">vs</span>
@@ -180,7 +196,15 @@ function buildMatchCard(m) {
   }
 
   if (state.user && !hasResult) {
-    if (!isLocked) {
+    if (fechaLocked) {
+      const label = isKO ? 'Eliminatorias' : 'Fecha ' + m.matchday;
+      if (pred) {
+        html += `<div class="match-pred">${pred.homeScore} - ${pred.awayScore} <span class="locked-badge">🔒</span></div>
+          <div style="text-align:center;margin-top:0.3rem"><span style="color:#ffd54f;font-size:0.75rem">⏳ Pago pendiente</span></div>`;
+      } else {
+        html += `<div style="text-align:center;padding:0.5rem;color:#546e7a;font-size:0.8rem">🔒 Pagá $${state.fechaPrice.toLocaleString()} para ${label}</div>`;
+      }
+    } else if (!isLocked) {
       const hs = state.homeScores[m.id] || (pred ? { home: pred.homeScore, away: pred.awayScore } : { home: '', away: '' });
       html += `<div class="match-inputs">
         <input type="number" min="0" max="20" data-action="home-score" data-match-id="${esc(m.id)}" value="${hs.home}" placeholder="0">
@@ -251,6 +275,7 @@ function buildPronosticos() {
         const c = p.points >= 3 ? '#4caf50' : p.points >= 1 ? '#ffd54f' : '#78909c';
         html += `<div style="font-size:0.85rem;color:${c};font-weight:700">+${p.points}</div>`;
       }
+      html += `<div style="font-size:0.75rem;color:${p.paid ? '#4caf50' : '#ef5350'}">${p.paid ? '✔ Pagado' : '⏳ Pendiente'}</div>`;
       html += `</div>`;
     });
     html += `</div>`;
@@ -398,6 +423,63 @@ function buildNotificaciones() {
       </div>`;
     });
   }
+  html += `</div>`;
+  return html;
+}
+
+function buildAdminPagos() {
+  let html = `<div class="container"><h1>💵 Pagos Pendientes</h1>`;
+
+  // Armar lista de usuarios con fechas impagas
+  const userFecha = {};
+  Object.keys(state.usersMap).forEach(uid => {
+    const fs = state.fechaStatus[uid] || {};
+    ['1', '2', '3', 'elim'].forEach(fk => {
+      if (!fs[fk]) {
+        if (!userFecha[uid]) userFecha[uid] = {};
+        userFecha[uid][fk] = 0;
+      }
+    });
+  });
+
+  const uids = Object.keys(userFecha).filter(uid => {
+    return !state.selectedPagosUser || uid === state.selectedPagosUser;
+  });
+
+  // Filter
+  if (Object.keys(userFecha).length) {
+    html += `<select class="filter-select" data-action="filter-pagos">
+      <option value="">Todos los participantes</option>`;
+    Object.keys(userFecha).forEach(uid => {
+      html += `<option value="${esc(uid)}" ${state.selectedPagosUser === uid ? 'selected' : ''}>${esc(state.usersMap[uid] || uid.slice(0,8))}</option>`;
+    });
+    html += `</select>`;
+  }
+
+  if (!uids.length) {
+    html += `<div class="alert alert-info">Sin pagos pendientes</div>`;
+  } else {
+    uids.forEach(uid => {
+      const fechas = Object.keys(userFecha[uid]);
+      const total = fechas.length * state.fechaPrice;
+      html += `<div class="group-section">
+        <h2 class="group-title" style="cursor:pointer" data-action="toggle-user" data-uid="${esc(uid)}">
+          ${esc(state.usersMap[uid] || uid.slice(0,8))} — $${total.toLocaleString()}
+          <span style="float:right;font-size:0.85rem;color:#78909c">${state.expandedUser === uid ? '▲' : '▼'}</span>
+        </h2>`;
+      if (state.expandedUser === uid) {
+        fechas.forEach(fk => {
+          const label = fk === 'elim' ? 'Eliminatorias' : 'Fecha ' + fk;
+          html += `<div class="match-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+            <span><strong>${label}</strong></span>
+            <button class="btn btn-success btn-sm" data-action="confirm-fecha-pay" data-uid="${esc(uid)}" data-fecha="${esc(fk)}">✅ Confirmar pago $${state.fechaPrice.toLocaleString()}</button>
+          </div>`;
+        });
+      }
+      html += `</div>`;
+    });
+  }
+
   html += `</div>`;
   return html;
 }

@@ -16,10 +16,15 @@ const state = {
   lastNotifCount: 0,
   selectedLeaderboardUser: '',
   selectedPronosticosFilter: '',
+  selectedPagosUser: '',
   error: '',
+  fechaPaid: { '1': false, '2': false, '3': false, 'elim': false },
+  fechaPrice: 15000,
+  fechaStatus: {},
 };
 
 let unsubScores = null;
+let unsubPagos = null;
 let unsubNotifications = null;
 let unsubPredictions = null;
 let unsubLeaderboard = null;
@@ -27,6 +32,7 @@ let currentPage = '';
 
 function cleanupListeners() {
   if (unsubScores) { unsubScores(); unsubScores = null; }
+  if (unsubPagos) { unsubPagos(); unsubPagos = null; }
   if (unsubNotifications) { unsubNotifications(); unsubNotifications = null; }
   if (unsubPredictions) { unsubPredictions(); unsubPredictions = null; }
   if (unsubLeaderboard) { unsubLeaderboard(); unsubLeaderboard = null; }
