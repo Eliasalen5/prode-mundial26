@@ -325,9 +325,9 @@ h2 { font-size: 1rem; color: #b0bec5; margin-bottom: 0.5rem; }
   .match-card.featured { margin: 2px 0; }
   .main-content { padding: 0.7rem; padding-bottom: 80px; }
   .container h1 { font-size: 1.2rem; }
-  .banner-premios { padding: 0.7rem 0.8rem; font-size: 0.8rem; }
-  .banner-premios .premios-grid { gap: 0.3rem; }
-  .banner-premios .premio-item { font-size: 0.75rem; padding: 0.2rem 0.5rem; }
+  .banner-premios { padding: 0.7rem 0.8rem; font-size: 0.8rem; line-height: 1.6; }
+  .banner-premios .premios-grid { flex-direction: column; gap: 0.25rem; }
+  .banner-premios .premio-item { font-size: 0.78rem; padding: 0.25rem 0.6rem; display: block; }
   .grupos-grid { grid-template-columns: 1fr; }
   .standings-table { font-size: 0.7rem; }
   .standings-table th, .standings-table td { padding: 0.3rem 0.2rem; }
@@ -345,7 +345,7 @@ h2 { font-size: 1rem; color: #b0bec5; margin-bottom: 0.5rem; }
   .match-card { padding: 0.5rem 0.5rem; }
   .match-teams { font-size: 0.78rem; }
   .match-inputs input { width: 42px; padding: 0.35rem 0.2rem; }
-  .banner-premios { padding: 0.5rem 0.6rem; font-size: 0.75rem; }
-  .banner-premios .premio-item { font-size: 0.7rem; }
+  .banner-premios { padding: 0.5rem 0.6rem; font-size: 0.75rem; line-height: 1.5; }
+  .banner-premios .premio-item { font-size: 0.72rem; padding: 0.2rem 0.5rem; }
   .standings-table { font-size: 0.65rem; }
 }
