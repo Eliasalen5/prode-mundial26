@@ -84,8 +84,8 @@ function buildHome() {
     <h1>Fixture Mundial 2026</h1>
     <div class="banner-premios">
       <div><strong>📊 Sistema de puntos:</strong></div>
-      <div style="margin-top:0.2rem"><span class="pts">▸ Partido normal → exacto <strong>3 pts</strong>, ganador <strong>1 pt</strong></span></div>
-      <div style="margin-top:0.1rem"><span style="color:#29b6f6">▸ Partido destacado 🔥 → exacto <strong>5 pts</strong>, ganador <strong>2 pts</strong></span></div>
+      <div style="margin-top:0.2rem"><span class="pts">▸ Partido normal → resultado exacto <strong>3 pts</strong>, ganador o empate <strong>1 pt</strong></span></div>
+      <div style="margin-top:0.1rem"><span style="color:#29b6f6">▸ Partido destacado 🔥 → resultado exacto <strong>5 pts</strong>, ganador o empate <strong>2 pts</strong></span></div>
       <div style="margin-top:0.5rem"><strong>🏆 Premios por fecha:</strong></div>
       <div class="premios-grid">
         <span class="premio-item">Fecha 1: <strong>$${Math.round(getFechaPrize('1')).toLocaleString()}</strong></span>
