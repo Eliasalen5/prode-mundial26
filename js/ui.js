@@ -117,6 +117,7 @@ function buildHome() {
         html += `<div class="pay-banner">
           <span style="color:#ffd54f">🔒 Pagá $${state.fechaPrice.toLocaleString()} para Fecha ${f}</span>
           <button class="btn btn-success btn-sm" style="margin-left:0.5rem" data-action="pay-fecha" data-fecha="${f}">💵 Pagar por WhatsApp</button>
+          <div style="margin-top:0.3rem;font-size:0.75rem;color:#78909c">Alias: <strong style="cursor:pointer;color:#4fc3f7" onclick="navigator.clipboard.writeText('Eliasalen5')">Eliasalen5</strong> (tocá para copiar)</div>
         </div>`;
       } else if (state.user && isPaid) {
         html += `<div class="pay-banner" style="color:#4caf50">✅ Fecha ${f} pagada</div>`;
@@ -143,6 +144,7 @@ function buildHome() {
       html += `<div class="pay-banner">
         <span style="color:#ffd54f">🔒 Pagá $${state.fechaPrice.toLocaleString()} para Eliminatorias</span>
         <button class="btn btn-success btn-sm" style="margin-left:0.5rem" data-action="pay-fecha" data-fecha="elim">💵 Pagar por WhatsApp</button>
+        <div style="margin-top:0.3rem;font-size:0.75rem;color:#78909c">Alias: <strong style="cursor:pointer;color:#4fc3f7" onclick="navigator.clipboard.writeText('Eliasalen5')">Eliasalen5</strong> (tocá para copiar)</div>
       </div>`;
     } else if (state.user && isElimPaid) {
       html += `<div class="pay-banner" style="color:#4caf50">✅ Eliminatorias pagadas</div>`;
