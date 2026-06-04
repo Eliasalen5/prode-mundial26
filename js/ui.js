@@ -79,18 +79,18 @@ function getFechaPrize(key) {
   return count * state.fechaPrice * 0.9;
 }
 
-function getFechaPrizeLabel(key) {
-  const label = key === 'elim' ? 'Eliminatorias' : 'Fecha ' + key;
-  return `${label}: $${Math.round(getFechaPrize(key)).toLocaleString()}`;
-}
-
 function buildHome() {
   let html = `<div class="container">
     <h1>Fixture Mundial 2026</h1>
-    <div class="alert alert-info" style="margin-bottom:1rem;font-size:0.85rem">
-      <strong>📊 Sistema de puntos:</strong> Partido normal → resultado exacto <strong>3 pts</strong>, ganador/acierto <strong>1 pt</strong>.
-      Partido destacado 🔥 → exacto <strong>5 pts</strong>, ganador/acierto <strong>2 pts</strong>.<br>
-      <strong>🏆 Premios:</strong> ${getFechaPrizeLabel('1')} | ${getFechaPrizeLabel('2')} | ${getFechaPrizeLabel('3')} | ${getFechaPrizeLabel('elim')}
+    <div class="banner-premios">
+      <div><strong>📊 Sistema de puntos:</strong> <span class="pts">Partido normal → exacto <strong>3 pts</strong>, ganador <strong>1 pt</strong>. 🔥 Destacado → exacto <strong>5 pts</strong>, ganador <strong>2 pts</strong>.</span></div>
+      <div style="margin-top:0.5rem"><strong>🏆 Premios por fecha:</strong></div>
+      <div class="premios-grid">
+        <span class="premio-item">Fecha 1: <strong>$${Math.round(getFechaPrize('1')).toLocaleString()}</strong></span>
+        <span class="premio-item">Fecha 2: <strong>$${Math.round(getFechaPrize('2')).toLocaleString()}</strong></span>
+        <span class="premio-item">Fecha 3: <strong>$${Math.round(getFechaPrize('3')).toLocaleString()}</strong></span>
+        <span class="premio-item">Eliminatorias: <strong>$${Math.round(getFechaPrize('elim')).toLocaleString()}</strong></span>
+      </div>
     </div>`;
 
   const ms = state.matches;
