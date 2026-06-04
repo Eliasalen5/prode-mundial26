@@ -183,7 +183,7 @@ async function handleShowUserPredictions(uid) {
     });
     state.posicionesDetail = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
-      .filter(p => matchIds.has(p.matchId))
+      .filter(p => matchIds.has(p.matchId) && (p.scored === true || p.points != null))
       .map(p => {
         const m = state.matches.find(x => x.id === p.matchId);
         return { ...p, match: m };
