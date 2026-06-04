@@ -423,7 +423,7 @@ function buildPosiciones() {
   sorted.forEach((u, i) => {
     const highlight = state.user?.uid === u.uid ? ' style="background:#1a3a5c;font-weight:700"' : '';
     html += `<tr${highlight}>
-      <td style="cursor:pointer" data-action="show-user-predictions" data-uid="${esc(u.uid)}">${i + 1}</td>
+      <td style="cursor:pointer" data-action="show-user-predictions" data-uid="${esc(u.uid)}">${i === 0 ? '🥇' : (i + 1)}</td>
       <td style="cursor:pointer" data-action="show-user-predictions" data-uid="${esc(u.uid)}">${esc(u.username)}</td>
       <td class="pts-cell">${u.total}</td>
       <td>${u.predicted}</td>
