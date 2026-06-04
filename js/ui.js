@@ -74,12 +74,23 @@ function buildRegister() {
   </div>`;
 }
 
+function getFechaPrize(key) {
+  const count = Object.values(state.fechaStatus).filter(fs => fs?.[key]).length;
+  return count * state.fechaPrice * 0.9;
+}
+
+function getFechaPrizeLabel(key) {
+  const label = key === 'elim' ? 'Eliminatorias' : 'Fecha ' + key;
+  return `${label}: $${Math.round(getFechaPrize(key)).toLocaleString()}`;
+}
+
 function buildHome() {
   let html = `<div class="container">
     <h1>Fixture Mundial 2026</h1>
     <div class="alert alert-info" style="margin-bottom:1rem;font-size:0.85rem">
       <strong>📊 Sistema de puntos:</strong> Partido normal → resultado exacto <strong>3 pts</strong>, ganador/acierto <strong>1 pt</strong>.
-      Partido destacado 🔥 → exacto <strong>5 pts</strong>, ganador/acierto <strong>2 pts</strong>.
+      Partido destacado 🔥 → exacto <strong>5 pts</strong>, ganador/acierto <strong>2 pts</strong>.<br>
+      <strong>🏆 Premios:</strong> ${getFechaPrizeLabel('1')} | ${getFechaPrizeLabel('2')} | ${getFechaPrizeLabel('3')} | ${getFechaPrizeLabel('elim')}
     </div>`;
 
   const ms = state.matches;
@@ -376,6 +387,12 @@ function buildPosiciones() {
     html += `<option value="${esc(k)}" ${filter === k ? 'selected' : ''}>${mdLabels[k]}</option>`;
   });
   html += `</select>`;
+
+  // Prize for this fecha
+  const prize = Math.round(getFechaPrize(filter));
+  html += `<div style="margin:0.5rem 0 1rem;padding:0.6rem;background:#1a2a3e;border-radius:6px;text-align:center;font-size:0.9rem;color:#ffd54f">
+    🥇 1er puesto: <strong>$${prize.toLocaleString()}</strong>
+  </div>`;
 
   // Match IDs for the selected fecha
   const matchIdsInFecha = new Set();
