@@ -65,6 +65,7 @@ function render() {
 
   // Predictions listener (home + pronosticos)
   if ((page === '/' || page === '/pronosticos') && !unsubPredictions && state.user) {
+    loadCachedUsers();
     unsubPredictions = db.collection('predictions').where('userId', '==', state.user.uid).onSnapshot(snap => {
       state.predictions = {};
       snap.docs.forEach(d => { state.predictions[d.data().matchId] = { id: d.id, ...d.data() }; });
