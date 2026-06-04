@@ -493,6 +493,8 @@ function buildPosiciones() {
   html += `</div>`;
   return html;
 }
+
+function buildAdminPagos() {
   let html = `<div class="container"><h1>💵 Pagos Pendientes</h1>`;
 
   const userFecha = {};
