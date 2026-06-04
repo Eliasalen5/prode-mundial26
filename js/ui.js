@@ -617,9 +617,9 @@ function buildAdminMatchRow(m) {
   } else {
     const s = state.adminScores[m.id] || { home: '', away: '' };
     html += `<div class="match-inputs">
-      <input type="number" min="0" max="20" data-action="admin-score-home" data-match-id="${esc(m.id)}" value="${s.home}" placeholder="0" style="width:54px;padding:0.45rem 0.5rem;font-size:1rem">
+      <input type="number" min="0" max="20" data-action="admin-score-home" data-match-id="${esc(m.id)}" value="${s.home}" placeholder="0">
       <span style="color:#546e7a;font-size:1rem">-</span>
-      <input type="number" min="0" max="20" data-action="admin-score-away" data-match-id="${esc(m.id)}" value="${s.away}" placeholder="0" style="width:54px;padding:0.45rem 0.5rem;font-size:1rem">
+      <input type="number" min="0" max="20" data-action="admin-score-away" data-match-id="${esc(m.id)}" value="${s.away}" placeholder="0">
       <button class="btn btn-primary btn-sm" data-action="save-result" data-match-id="${esc(m.id)}">Guardar</button>
     </div>`;
   }

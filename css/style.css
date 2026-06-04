@@ -277,6 +277,28 @@ h2 { font-size: 1rem; color: #b0bec5; margin-bottom: 0.5rem; }
 }
 .grupo-team:last-child { border-bottom: none; }
 
+/* Match inputs (prediction / admin) */
+.match-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.match-inputs input {
+  width: 54px;
+  padding: 0.45rem 0.5rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #2a3f5e;
+  background: #0f1a2b;
+  color: #e0e0e0;
+  outline: none;
+  text-align: center;
+}
+.match-inputs input:focus { border-color: #4fc3f7; }
+.match-pred { font-size: 0.9rem; font-weight: 600; color: #4fc3f7; }
+
 /* Animations */
 @keyframes slideIn {
   from { transform: translateX(100%); opacity: 0; }
@@ -298,6 +320,32 @@ h2 { font-size: 1rem; color: #b0bec5; margin-bottom: 0.5rem; }
   .match-teams { min-width: unset; font-size: 0.82rem; text-align: center; }
   .match-info { text-align: center; }
   .match-score { text-align: center; }
-  .main-content { padding: 0.7rem; }
+  .match-inputs { justify-content: center; }
+  .match-inputs input { width: 48px; padding: 0.4rem 0.3rem; font-size: 0.9rem; }
+  .match-card.featured { margin: 2px 0; }
+  .main-content { padding: 0.7rem; padding-bottom: 80px; }
   .container h1 { font-size: 1.2rem; }
+  .banner-premios { padding: 0.7rem 0.8rem; font-size: 0.8rem; }
+  .banner-premios .premios-grid { gap: 0.3rem; }
+  .banner-premios .premio-item { font-size: 0.75rem; padding: 0.2rem 0.5rem; }
+  .grupos-grid { grid-template-columns: 1fr; }
+  .standings-table { font-size: 0.7rem; }
+  .standings-table th, .standings-table td { padding: 0.3rem 0.2rem; }
+  .filter-select { max-width: 100%; }
+  .notif-item { flex-direction: column; align-items: flex-start; gap: 0.2rem; }
+  .notif-date { align-self: flex-end; }
+  .pay-banner { padding: 0.5rem; font-size: 0.78rem; }
+  .pay-banner .btn { display: block; margin: 0.4rem auto 0 !important; }
+  .grupo-card { overflow-x: auto; }
+  #toast-container { right: 0.5rem; left: 0.5rem; bottom: 0.5rem; max-width: unset; }
+}
+
+@media (max-width: 400px) {
+  .navbar-links a { font-size: 0.65rem; padding: 0.2rem 0.25rem; }
+  .match-card { padding: 0.5rem 0.5rem; }
+  .match-teams { font-size: 0.78rem; }
+  .match-inputs input { width: 42px; padding: 0.35rem 0.2rem; }
+  .banner-premios { padding: 0.5rem 0.6rem; font-size: 0.75rem; }
+  .banner-premios .premio-item { font-size: 0.7rem; }
+  .standings-table { font-size: 0.65rem; }
 }
