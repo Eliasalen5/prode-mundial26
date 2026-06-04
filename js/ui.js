@@ -488,11 +488,11 @@ function buildPosiciones() {
     html += `</div>`;
   }
 
+  html += `<div class="alert alert-info" style="margin-top:0.8rem;font-size:0.8rem">ℹ️ En caso de empate en puntos, gana quien tenga más resultados exactos.</div>`;
+
   html += `</div>`;
   return html;
 }
-
-function buildAdminPagos() {
   let html = `<div class="container"><h1>💵 Pagos Pendientes</h1>`;
 
   const userFecha = {};
