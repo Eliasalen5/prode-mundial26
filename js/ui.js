@@ -423,8 +423,8 @@ function buildPosiciones() {
   sorted.forEach((u, i) => {
     const highlight = state.user?.uid === u.uid ? ' style="background:#1a3a5c;font-weight:700"' : '';
     html += `<tr${highlight}>
-      <td>${i + 1}</td>
-      <td>${esc(u.username)}</td>
+      <td style="cursor:pointer" data-action="show-user-predictions" data-uid="${esc(u.uid)}">${i + 1}</td>
+      <td style="cursor:pointer" data-action="show-user-predictions" data-uid="${esc(u.uid)}">${esc(u.username)}</td>
       <td class="pts-cell">${u.total}</td>
       <td>${u.predicted}</td>
       <td>${u.exactos}</td>
@@ -432,6 +432,40 @@ function buildPosiciones() {
     </tr>`;
   });
   html += `</tbody></table></div>`;
+
+  // Detail section for selected user
+  if (state.posicionesSelectedUid) {
+    const uid = state.posicionesSelectedUid;
+    const username = state.usersMap[uid] || uid.slice(0, 8);
+    html += `<div class="group-section" style="margin-top:1.5rem">
+      <h2 class="group-title" style="cursor:default">📝 Pronósticos de ${esc(username)}
+        <button class="btn btn-sm" style="float:right;background:#37474f;color:#e0e0e0;border:none;padding:0.3rem 0.7rem;border-radius:4px;cursor:pointer" data-action="close-user-detail">✕ Cerrar</button>
+      </h2>`;
+    if (state.posicionesDetailLoading) {
+      html += `<div style="text-align:center;padding:1rem;color:#90a4ae">Cargando pronósticos...</div>`;
+    } else if (!state.posicionesDetail.length) {
+      html += `<div style="padding:0.8rem;color:#546e7a">Este usuario no cargó pronósticos para esta fecha.</div>`;
+    } else {
+      state.posicionesDetail.forEach(p => {
+        const m = p.match;
+        if (!m) return;
+        const realScore = m.homeScore != null ? `${m.homeScore} - ${m.awayScore}` : '—';
+        const predTxt = p.homeScore != null ? `${p.homeScore} - ${p.awayScore}` : '—';
+        const ptsTxt = p.points != null ? `${p.points} pts` : '—';
+        const ptsColor = p.points >= 3 ? '#4caf50' : p.points >= 1 ? '#ffd54f' : '#78909c';
+        html += `<div class="match-card">
+          <div class="match-teams">${teamHTML(m.homeTeam)} vs ${teamHTML(m.awayTeam)}</div>
+          <div style="display:flex;gap:1rem;justify-content:center;align-items:center;flex-wrap:wrap">
+            <span style="color:#90a4ae;font-size:0.85rem">Pronóstico: <strong>${predTxt}</strong></span>
+            <span style="color:#90a4ae;font-size:0.85rem">Resultado: <strong>${realScore}</strong></span>
+            <span style="color:${ptsColor};font-size:0.9rem;font-weight:700">${ptsTxt}</span>
+          </div>
+        </div>`;
+      });
+    }
+    html += `</div>`;
+  }
+
   html += `</div>`;
   return html;
 }

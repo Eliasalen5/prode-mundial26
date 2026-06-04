@@ -17,6 +17,9 @@ const state = {
   homeScores: {},
   allPredictions: {},
   selectedPosicionesFilter: '',
+  posicionesSelectedUid: '',
+  posicionesDetail: [],
+  posicionesDetailLoading: false,
 };
 
 let unsubScores = null;

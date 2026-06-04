@@ -168,6 +168,42 @@ async function handleSavePrediction(matchId) {
   }
 }
 
+async function handleShowUserPredictions(uid) {
+  if (!uid) return;
+  state.posicionesSelectedUid = uid;
+  state.posicionesDetailLoading = true;
+  render();
+  try {
+    const snap = await db.collection('predictions').where('userId', '==', uid).get();
+    const filter = state.selectedPosicionesFilter || '1';
+    const matchIds = new Set();
+    state.matches.forEach(m => {
+      const md = m.stage === 'knockout' ? 'elim' : String(m.matchday);
+      if (md === filter) matchIds.add(m.id);
+    });
+    state.posicionesDetail = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(p => matchIds.has(p.matchId))
+      .map(p => {
+        const m = state.matches.find(x => x.id === p.matchId);
+        return { ...p, match: m };
+      })
+      .sort((a, b) => (a.match?.matchDate?.toDate?.() || new Date(a.match?.date)) - (b.match?.matchDate?.toDate?.() || new Date(b.match?.date)));
+    state.posicionesDetailLoading = false;
+    render();
+  } catch (e) {
+    state.posicionesDetailLoading = false;
+    showToast('❌ Error al cargar pronósticos');
+    render();
+  }
+}
+
+function handleCloseUserDetail() {
+  state.posicionesSelectedUid = '';
+  state.posicionesDetail = [];
+  render();
+}
+
 // ============================================================
 // PAYMENT HANDLERS
 // ============================================================
@@ -262,6 +298,8 @@ document.getElementById('root').addEventListener('click', (e) => {
     const id = e.target.closest('[data-notif-id]')?.dataset.notifId;
     if (id) db.collection('notifications').doc(id).update({ read: true });
   }
+  else if (action === 'show-user-predictions') handleShowUserPredictions(e.target.dataset.uid);
+  else if (action === 'close-user-detail') handleCloseUserDetail();
 });
 
 document.getElementById('root').addEventListener('input', (e) => {
