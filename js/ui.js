@@ -397,7 +397,8 @@ function buildPosiciones() {
   const prize = Math.round(getFechaPrize(filter));
   html += `<div style="margin:0.5rem 0 1rem;padding:0.6rem;background:#1a2a3e;border-radius:6px;text-align:center;font-size:0.9rem;color:#ffd54f">
     🥇 1er puesto: <strong>$${prize.toLocaleString()}</strong>
-  </div>`;
+  </div>
+  <div style="margin-bottom:0.8rem;font-size:0.78rem;color:#78909c">ℹ️ En caso de empate en puntos, gana quien tenga más resultados exactos.</div>`;
 
   // Match IDs for the selected fecha
   const matchIdsInFecha = new Set();
@@ -487,8 +488,6 @@ function buildPosiciones() {
     }
     html += `</div>`;
   }
-
-  html += `<div class="alert alert-info" style="margin-top:0.8rem;font-size:0.8rem">ℹ️ En caso de empate en puntos, gana quien tenga más resultados exactos.</div>`;
 
   html += `</div>`;
   return html;
