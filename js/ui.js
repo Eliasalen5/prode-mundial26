@@ -399,7 +399,7 @@ function buildPosiciones() {
     🥇 1er puesto: <strong>$${prize.toLocaleString()}</strong>
   </div>
   <div style="margin-bottom:0.4rem;font-size:0.78rem;color:#78909c">ℹ️ En caso de empate en puntos, gana quien tenga más resultados exactos.</div>
-  <div style="font-size:0.75rem;color:#546e7a">En caso de seguir empatados, gana el resultado exacto con más goles.</div>`;
+  <div style="font-size:0.75rem;color:#78909c">ℹ️ En caso de seguir empatados, gana el resultado exacto con más goles.</div>`;
 
   // Match IDs for the selected fecha
   const matchIdsInFecha = new Set();
