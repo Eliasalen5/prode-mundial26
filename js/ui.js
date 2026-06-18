@@ -417,10 +417,13 @@ function buildPosiciones() {
   const userPoints = {};
   Object.values(state.allPredictions).forEach(p => {
     if (!matchIdsInFecha.has(p.matchId)) return;
-    if (!userPoints[p.userId]) userPoints[p.userId] = { total: 0, predicted: 0, exactos: 0, parciales: 0 };
+    if (!userPoints[p.userId]) userPoints[p.userId] = { total: 0, predicted: 0, exactos: 0, parciales: 0, golesExactos: 0 };
     userPoints[p.userId].total += p.points || 0;
     userPoints[p.userId].predicted++;
-    if (p.points >= 3) userPoints[p.userId].exactos++;
+    if (p.points >= 3) {
+      userPoints[p.userId].exactos++;
+      userPoints[p.userId].golesExactos += Number(p.homeScore) + Number(p.awayScore);
+    }
     else if (p.points >= 1) userPoints[p.userId].parciales++;
   });
 
@@ -429,10 +432,10 @@ function buildPosiciones() {
   const sorted = Array.from(allUids)
     .map(uid => ({
       uid,
-      ...(userPoints[uid] || { total: 0, predicted: 0, exactos: 0, parciales: 0 }),
+      ...(userPoints[uid] || { total: 0, predicted: 0, exactos: 0, parciales: 0, golesExactos: 0 }),
       username: state.usersMap[uid] || uid.slice(0, 8),
     }))
-    .sort((a, b) => b.total - a.total);
+    .sort((a, b) => b.total - a.total || b.exactos - a.exactos || b.golesExactos - a.golesExactos);
 
   if (!sorted.length) {
     html += `<div class="alert alert-info">Aún no hay participantes. Cuando los usuarios paguen, aparecerán acá.</div>`;
