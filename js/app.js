@@ -175,7 +175,7 @@ async function handleShowUserPredictions(uid) {
   render();
   try {
     const snap = await db.collection('predictions').where('userId', '==', uid).get();
-    const filter = state.selectedPosicionesFilter || '1';
+    const filter = state.selectedPosicionesFilter || '2';
     const matchIds = new Set();
     state.matches.forEach(m => {
       const md = m.stage === 'knockout' ? 'elim' : String(m.matchday);
