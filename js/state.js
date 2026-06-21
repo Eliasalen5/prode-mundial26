@@ -30,7 +30,6 @@ let unsubAllPredictions = null;
 let currentPage = '';
 
 function cleanupListeners() {
-  if (unsubScores) { unsubScores(); unsubScores = null; }
   if (unsubPagos) { unsubPagos(); unsubPagos = null; }
   if (unsubNotifications) { unsubNotifications(); unsubNotifications = null; }
   if (unsubPredictions) { unsubPredictions(); unsubPredictions = null; }
