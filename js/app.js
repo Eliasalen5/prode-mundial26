@@ -17,6 +17,8 @@ function initMatches() {
             state.matches[idx].homeScore = data.homeScore != null ? data.homeScore : null;
             state.matches[idx].awayScore = data.awayScore != null ? data.awayScore : null;
             state.matches[idx].status = data.status || 'locked';
+            if (data.homeTeam) state.matches[idx].homeTeam = data.homeTeam;
+            if (data.awayTeam) state.matches[idx].awayTeam = data.awayTeam;
             if ((oldHome ?? null) !== state.matches[idx].homeScore || (oldAway ?? null) !== state.matches[idx].awayScore) {
               changed = true;
             }
@@ -92,6 +94,27 @@ async function handleClearResult(matchId) {
     }
     clearPointsForMatch(matchId);
     showToast('🧹 Resultado limpiado');
+    render();
+  } catch (e) {
+    showToast('❌ Error: ' + e.message);
+  }
+}
+
+// ============================================================
+// ADMIN: SAVE BRACKET TEAM NAMES
+// ============================================================
+async function handleSaveBracketTeam(matchId) {
+  const s = state.adminBracket[matchId];
+  if (!s || !s.home || !s.away) { showToast('❌ Completá ambos equipos'); return; }
+  try {
+    await db.collection('matches').doc(matchId).set({
+      homeTeam: s.home.trim(),
+      awayTeam: s.away.trim(),
+    }, { merge: true });
+    state.matches.find(m => m.id === matchId).homeTeam = s.home.trim();
+    state.matches.find(m => m.id === matchId).awayTeam = s.away.trim();
+    delete state.adminBracket[matchId];
+    showToast('✅ Equipos guardados');
     render();
   } catch (e) {
     showToast('❌ Error: ' + e.message);
@@ -175,7 +198,7 @@ async function handleShowUserPredictions(uid) {
   render();
   try {
     const snap = await db.collection('predictions').where('userId', '==', uid).get();
-    const filter = state.selectedPosicionesFilter || '2';
+    const filter = state.selectedPosicionesFilter || '3';
     const matchIds = new Set();
     state.matches.forEach(m => {
       const md = m.stage === 'knockout' ? 'elim' : String(m.matchday);
@@ -300,6 +323,7 @@ document.getElementById('root').addEventListener('click', (e) => {
   }
   else if (action === 'show-user-predictions') handleShowUserPredictions(e.target.dataset.uid);
   else if (action === 'close-user-detail') handleCloseUserDetail();
+  else if (action === 'save-bracket-team') handleSaveBracketTeam(e.target.dataset.matchId);
 });
 
 document.getElementById('root').addEventListener('input', (e) => {
@@ -316,6 +340,11 @@ document.getElementById('root').addEventListener('input', (e) => {
     if (!state.homeScores[matchId]) state.homeScores[matchId] = { home: '', away: '' };
     if (action === 'home-score') state.homeScores[matchId].home = e.target.value;
     else state.homeScores[matchId].away = e.target.value;
+  }
+  else if (action === 'admin-bracket-home' || action === 'admin-bracket-away') {
+    if (!state.adminBracket[matchId]) state.adminBracket[matchId] = { home: '', away: '' };
+    if (action === 'admin-bracket-home') state.adminBracket[matchId].home = e.target.value;
+    else state.adminBracket[matchId].away = e.target.value;
   }
 });
 

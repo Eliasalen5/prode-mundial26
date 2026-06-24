@@ -302,6 +302,40 @@ function buildGrupos() {
   }
 
   html += `</div></div>`;
+
+  // ── ELIMINATORIAS — todas las rondas ──────────────────────
+  const bracketRounds = [
+    { key: '16avos', label: '16avos de Final' },
+    { key: '8avos', label: '8avos de Final' },
+    { key: 'Cuartos', label: 'Cuartos de Final' },
+    { key: 'Semis', label: 'Semifinales' },
+    { key: '3er puesto', label: '3er Puesto' },
+    { key: 'Final', label: 'Final' },
+  ];
+  const isAdmin = state.userData?.role === 'admin';
+  bracketRounds.forEach(r => {
+    const ms = state.matches.filter(m => m.matchday === r.key);
+    if (!ms.length) return;
+    ms.sort((a, b) => new Date(a.date) - new Date(b.date));
+    html += `<div style="margin-top:2rem"><h2>🏆 Eliminatorias — ${r.label}</h2>`;
+    ms.forEach(m => {
+      const bk = state.adminBracket[m.id] || {};
+      const homeVal = bk.home !== undefined ? bk.home : m.homeTeam;
+      const awayVal = bk.away !== undefined ? bk.away : m.awayTeam;
+      html += `<div class="match-card">`;
+      if (isAdmin) {
+        html += `<input type="text" class="bracket-input" value="${esc(homeVal)}" data-action="admin-bracket-home" data-match-id="${m.id}" placeholder="Local">
+          <span class="vs">vs</span>
+          <input type="text" class="bracket-input" value="${esc(awayVal)}" data-action="admin-bracket-away" data-match-id="${m.id}" placeholder="Visitante">
+          <button class="btn btn-sm btn-success" data-action="save-bracket-team" data-match-id="${m.id}">💾 Guardar</button>`;
+      } else {
+        html += `<div class="match-teams">${teamHTML(m.homeTeam)} vs ${teamHTML(m.awayTeam)}</div>`;
+      }
+      html += `</div>`;
+    });
+    html += `</div>`;
+  });
+
   return html;
 }
 
@@ -384,7 +418,7 @@ function buildPosiciones() {
   let html = `<div class="container">
     <h1>🏆 Posiciones</h1>`;
 
-  const filter = state.selectedPosicionesFilter || '2';
+  const filter = state.selectedPosicionesFilter || '3';
 
   const mdLabels = { '1': 'Fecha 1', '2': 'Fecha 2', '3': 'Fecha 3', 'elim': 'Eliminatorias' };
   html += `<select class="filter-select" data-action="filter-posiciones">`;

@@ -6,6 +6,7 @@ const state = {
   error: '',
   collapsedGroups: { fecha_1: false, fecha_2: false, fecha_3: false, fecha_elim: false },
   adminScores: {},
+  adminBracket: {},
   fechaPaid: { '1': false, '2': false, '3': false, 'elim': false },
   fechaPrice: 15000,
   fechaStatus: {},

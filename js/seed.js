@@ -98,49 +98,49 @@ function getSeedData() {
   add(27,'23:00','Jordania','Argentina','J',3);
 
   // ── ELIMINATORIAS (32 partidos) ────────────────────────────────────
-  // 16avos — Jun 29–Jul 2
-  addKO('16avos','06-29','13:00','1A','2B');
-  addKO('16avos','06-29','16:00','1C','2D');
-  addKO('16avos','06-29','19:00','1E','2F');
-  addKO('16avos','06-29','22:00','1G','2H');
-  addKO('16avos','06-30','13:00','1I','2J');
-  addKO('16avos','06-30','16:00','1K','2L');
-  addKO('16avos','06-30','19:00','1B','2A');
-  addKO('16avos','06-30','22:00','1D','2C');
-  addKO('16avos','07-01','13:00','1F','2E');
-  addKO('16avos','07-01','16:00','1H','2G');
-  addKO('16avos','07-01','19:00','1J','2I');
-  addKO('16avos','07-01','22:00','1L','2K');
-  addKO('16avos','07-02','13:00','3A','3B');
-  addKO('16avos','07-02','16:00','3C','3D');
-  addKO('16avos','07-02','19:00','3E','3F');
-  addKO('16avos','07-02','22:00','3G','3H');
+  // 16avos — Jun 28–Jul 3
+  addKO('16avos','06-28','16:00','2° Grupo A','2° Grupo B');
+  addKO('16avos','06-29','14:00','1° Grupo C','2° Grupo F');
+  addKO('16avos','06-29','17:30','Alemania','3° (A/B/C/D/F)');
+  addKO('16avos','06-29','22:00','1° Grupo F','2° Grupo C');
+  addKO('16avos','06-30','14:00','2° Grupo E','2° Grupo I');
+  addKO('16avos','06-30','18:00','1° Grupo I','3° (C/D/F/G/H)');
+  addKO('16avos','06-30','22:00','México','3° (C/E/F/H/I)');
+  addKO('16avos','07-01','13:00','1° Grupo L','3° (E/H/I/J/K)');
+  addKO('16avos','07-01','17:00','1° Grupo G','3° (A/E/H/I/J)');
+  addKO('16avos','07-01','21:00','Estados Unidos','3° (B/E/F/I/J)');
+  addKO('16avos','07-02','16:00','1° Grupo H','2° Grupo J');
+  addKO('16avos','07-02','20:00','2° Grupo K','2° Grupo L');
+  addKO('16avos','07-03','00:00','1° Grupo B','3° (E/F/G/I/J)');
+  addKO('16avos','07-03','15:00','2° Grupo D','2° Grupo G');
+  addKO('16avos','07-03','19:00','Argentina','2° Grupo H');
+  addKO('16avos','07-03','22:30','1° Grupo K','3° (D/E/I/J/L)');
 
   // 8avos — Jul 4–7
-  addKO('8avos','07-04','13:00','W49','W50');
-  addKO('8avos','07-04','16:00','W51','W52');
-  addKO('8avos','07-04','19:00','W53','W54');
-  addKO('8avos','07-04','22:00','W55','W56');
-  addKO('8avos','07-05','13:00','W57','W58');
-  addKO('8avos','07-05','16:00','W59','W60');
-  addKO('8avos','07-05','19:00','W61','W62');
-  addKO('8avos','07-05','22:00','W63','W64');
+  addKO('8avos','07-04','13:00','Ganador 49','Ganador 50');
+  addKO('8avos','07-04','16:00','Ganador 51','Ganador 52');
+  addKO('8avos','07-04','19:00','Ganador 53','Ganador 54');
+  addKO('8avos','07-04','22:00','Ganador 55','Ganador 56');
+  addKO('8avos','07-05','13:00','Ganador 57','Ganador 58');
+  addKO('8avos','07-05','16:00','Ganador 59','Ganador 60');
+  addKO('8avos','07-05','19:00','Ganador 61','Ganador 62');
+  addKO('8avos','07-05','22:00','Ganador 63','Ganador 64');
 
   // Cuartos — Jul 9–10
-  addKO('Cuartos','07-09','13:00','W65','W66');
-  addKO('Cuartos','07-09','17:00','W67','W68');
-  addKO('Cuartos','07-10','13:00','W69','W70');
-  addKO('Cuartos','07-10','17:00','W71','W72');
+  addKO('Cuartos','07-09','13:00','Ganador 65','Ganador 66');
+  addKO('Cuartos','07-09','17:00','Ganador 67','Ganador 68');
+  addKO('Cuartos','07-10','13:00','Ganador 69','Ganador 70');
+  addKO('Cuartos','07-10','17:00','Ganador 71','Ganador 72');
 
   // Semis — Jul 14–15
-  addKO('Semis','07-14','15:00','W73','W74');
-  addKO('Semis','07-15','15:00','W75','W76');
+  addKO('Semis','07-14','15:00','Ganador 73','Ganador 74');
+  addKO('Semis','07-15','15:00','Ganador 75','Ganador 76');
 
   // 3er puesto — Jul 18
-  addKO('3er puesto','07-18','15:00','L77','L78');
+  addKO('3er puesto','07-18','15:00','Perdedor 77','Perdedor 78');
 
   // Final — Jul 19
-  addKO('Final','07-19','16:00','W77','W78');
+  addKO('Final','07-19','16:00','Ganador 77','Ganador 78');
 
   return data;
 }
