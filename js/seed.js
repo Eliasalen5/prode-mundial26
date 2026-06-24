@@ -133,11 +133,11 @@ function getSeedData() {
   addKO('Cuartos','07-10','17:00','Ganador 71','Ganador 72');
 
   // Semis — Jul 14–15
-  addKO('Semis','07-14','15:00','Ganador 73','Ganador 74');
-  addKO('Semis','07-15','15:00','Ganador 75','Ganador 76');
+  addKO('Semis','07-14','16:00','Ganador 73','Ganador 74');
+  addKO('Semis','07-15','16:00','Ganador 75','Ganador 76');
 
   // 3er puesto — Jul 18
-  addKO('3er puesto','07-18','15:00','Perdedor 77','Perdedor 78');
+  addKO('3er puesto','07-18','18:00','Perdedor 77','Perdedor 78');
 
   // Final — Jul 19
   addKO('Final','07-19','16:00','Ganador 77','Ganador 78');
