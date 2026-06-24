@@ -105,16 +105,18 @@ async function handleClearResult(matchId) {
 // ============================================================
 async function handleSaveBracketTeam(matchId) {
   const s = state.adminBracket[matchId];
-  if (!s || !s.home || !s.away) { showToast('❌ Completá ambos equipos'); return; }
+  if (!s) { showToast('❌ Modificá al menos un equipo'); return; }
+  const update = {};
+  if (s.home !== undefined) update.homeTeam = s.home.trim();
+  if (s.away !== undefined) update.awayTeam = s.away.trim();
+  if (!update.homeTeam && !update.awayTeam) { showToast('❌ Completá al menos un equipo'); return; }
   try {
-    await db.collection('matches').doc(matchId).set({
-      homeTeam: s.home.trim(),
-      awayTeam: s.away.trim(),
-    }, { merge: true });
-    state.matches.find(m => m.id === matchId).homeTeam = s.home.trim();
-    state.matches.find(m => m.id === matchId).awayTeam = s.away.trim();
+    await db.collection('matches').doc(matchId).set(update, { merge: true });
+    const match = state.matches.find(m => m.id === matchId);
+    if (s.home !== undefined) match.homeTeam = s.home.trim();
+    if (s.away !== undefined) match.awayTeam = s.away.trim();
     delete state.adminBracket[matchId];
-    showToast('✅ Equipos guardados');
+    showToast('✅ Equipo guardado');
     render();
   } catch (e) {
     showToast('❌ Error: ' + e.message);
@@ -342,9 +344,8 @@ document.getElementById('root').addEventListener('input', (e) => {
     else state.homeScores[matchId].away = e.target.value;
   }
   else if (action === 'admin-bracket-home' || action === 'admin-bracket-away') {
-    if (!state.adminBracket[matchId]) state.adminBracket[matchId] = { home: '', away: '' };
-    if (action === 'admin-bracket-home') state.adminBracket[matchId].home = e.target.value;
-    else state.adminBracket[matchId].away = e.target.value;
+    if (!state.adminBracket[matchId]) state.adminBracket[matchId] = {};
+    state.adminBracket[matchId][action === 'admin-bracket-home' ? 'home' : 'away'] = e.target.value;
   }
 });
 
