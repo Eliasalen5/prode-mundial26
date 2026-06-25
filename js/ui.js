@@ -39,7 +39,21 @@ function buildLogin() {
       </div>
       <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
     </form>
-    <div class="form-footer">¿No tenés cuenta? <a href="#/register">Registrarse</a></div>
+    <div class="form-footer">
+      <a href="#" data-action="show-reset">Olvidé mi contraseña</a> · <a href="#/register">Registrarse</a>
+    </div>
+    <div id="reset-form" style="display:none;margin-top:1rem">
+      <hr style="border-color:#2a3f5e">
+      <h3>Restablecer contraseña</h3>
+      <form id="form-reset">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="reset-email" required placeholder="tu@email.com">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Enviar correo</button>
+        <button type="button" class="btn btn-secondary btn-block" data-action="hide-reset">Volver</button>
+      </form>
+    </div>
   </div>`;
 }
 

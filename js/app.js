@@ -326,6 +326,15 @@ document.getElementById('root').addEventListener('click', (e) => {
   else if (action === 'show-user-predictions') handleShowUserPredictions(e.target.dataset.uid);
   else if (action === 'close-user-detail') handleCloseUserDetail();
   else if (action === 'save-bracket-team') handleSaveBracketTeam(e.target.dataset.matchId);
+  else if (action === 'show-reset') {
+    e.preventDefault();
+    document.getElementById('form-login').style.display = 'none';
+    document.getElementById('reset-form').style.display = '';
+  }
+  else if (action === 'hide-reset') {
+    document.getElementById('reset-form').style.display = 'none';
+    document.getElementById('form-login').style.display = '';
+  }
 });
 
 document.getElementById('root').addEventListener('input', (e) => {
@@ -369,6 +378,10 @@ document.getElementById('root').addEventListener('submit', (e) => {
   if (e.target.id === 'form-login') {
     e.preventDefault();
     handleLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value);
+  }
+  if (e.target.id === 'form-reset') {
+    e.preventDefault();
+    handlePasswordReset(document.getElementById('reset-email').value);
   }
   if (e.target.id === 'form-register') {
     e.preventDefault();

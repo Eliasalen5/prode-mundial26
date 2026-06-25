@@ -60,3 +60,19 @@ function handleRegister(nombre, apellido, email, password, phone) {
 function handleLogout() {
   auth.signOut().then(() => navigate('/login')).catch(() => {});
 }
+
+function handlePasswordReset(email) {
+  auth.sendPasswordResetEmail(email)
+    .then(() => {
+      document.getElementById('reset-form').style.display = 'none';
+      document.getElementById('form-login').style.display = '';
+      showToast('✅ Correo enviado. Revisá tu bandeja de entrada.');
+    })
+    .catch(err => {
+      let msg = 'Error al enviar el correo';
+      if (err.code === 'auth/user-not-found') msg = 'No hay cuenta con ese email';
+      else if (err.code === 'auth/invalid-email') msg = 'Email inválido';
+      else msg = err.message;
+      showToast('❌ ' + msg);
+    });
+}
