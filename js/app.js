@@ -31,25 +31,42 @@ function initMatches() {
 }
 
 let _cachedUsersMap = null;
+let _loadingUsers = false;
 
 // ============================================================
 // CACHED USERS (for admin pagos)
 // ============================================================
-function loadCachedUsers() {
-  if (_cachedUsersMap) {
+function loadCachedUsers(force) {
+  if (!force && _cachedUsersMap) {
     state.usersMap = Object.assign({}, _cachedUsersMap);
-  } else {
-    db.collection('users').get().then(snap => {
-      state.usersMap = {};
-      state.fechaStatus = {};
-      snap.docs.forEach(d => {
-        state.usersMap[d.id] = d.data().username;
-        state.fechaStatus[d.id] = d.data().fechaPaid || {};
-      });
-      _cachedUsersMap = Object.assign({}, state.usersMap);
-      render();
-    }).catch(() => {});
+    return Promise.resolve();
   }
+  if (_loadingUsers) return Promise.resolve();
+  _loadingUsers = true;
+  return db.collection('users').get().then(snap => {
+    state.usersMap = {};
+    state.fechaStatus = {};
+    snap.docs.forEach(d => {
+      state.usersMap[d.id] = d.data().username;
+      state.fechaStatus[d.id] = d.data().fechaPaid || {};
+    });
+    _cachedUsersMap = Object.assign({}, state.usersMap);
+    render();
+  }).catch(() => {}).finally(() => { _loadingUsers = false; });
+}
+
+// ============================================================
+// ALL PREDICTIONS (for posiciones)
+// ============================================================
+let _allPredictionsLoaded = false;
+function loadAllPredictions(force) {
+  if (!force && _allPredictionsLoaded) return Promise.resolve();
+  return db.collection('predictions').where('scored', '==', true).get().then(snap => {
+    state.allPredictions = {};
+    snap.docs.forEach(d => { state.allPredictions[d.id] = { id: d.id, ...d.data() }; });
+    _allPredictionsLoaded = true;
+    render();
+  }).catch(() => {});
 }
 
 // ============================================================
@@ -334,6 +351,14 @@ document.getElementById('root').addEventListener('click', (e) => {
   else if (action === 'hide-reset') {
     document.getElementById('reset-form').style.display = 'none';
     document.getElementById('form-login').style.display = '';
+  }
+  else if (action === 'refresh-posiciones') {
+    _allPredictionsLoaded = false;
+    loadAllPredictions(true);
+  }
+  else if (action === 'refresh-users') {
+    _cachedUsersMap = null;
+    loadCachedUsers(true);
   }
 });
 

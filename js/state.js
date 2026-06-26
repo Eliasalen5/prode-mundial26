@@ -31,10 +31,12 @@ let unsubAllPredictions = null;
 let currentPage = '';
 
 function cleanupListeners() {
-  if (unsubPagos) { unsubPagos(); unsubPagos = null; }
+  if (typeof unsubPagos === 'function') { unsubPagos(); }
+  unsubPagos = null;
   if (unsubNotifications) { unsubNotifications(); unsubNotifications = null; }
   if (unsubPredictions) { unsubPredictions(); unsubPredictions = null; }
-  if (unsubAllPredictions) { unsubAllPredictions(); unsubAllPredictions = null; }
+  if (typeof unsubAllPredictions === 'function') { unsubAllPredictions(); }
+  unsubAllPredictions = null;
 }
 
 function getPage() {

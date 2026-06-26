@@ -439,7 +439,8 @@ function buildPosiciones() {
   Object.keys(mdLabels).forEach(k => {
     html += `<option value="${esc(k)}" ${filter === k ? 'selected' : ''}>${mdLabels[k]}</option>`;
   });
-  html += `</select>`;
+  html += `</select>
+  <button class="btn btn-sm" style="float:right;background:#2a3f5e;color:#e0e0e0;border:none;padding:0.3rem 0.7rem;border-radius:4px;cursor:pointer" data-action="refresh-posiciones">🔄 Actualizar</button>`;
 
   // Prize for this fecha
   const prize = Math.round(getFechaPrize(filter));
@@ -546,7 +547,9 @@ function buildPosiciones() {
 }
 
 function buildAdminPagos() {
-  let html = `<div class="container"><h1>💵 Pagos Pendientes</h1>`;
+  let html = `<div class="container"><h1>💵 Pagos Pendientes
+    <button class="btn btn-sm" style="float:right;background:#2a3f5e;color:#e0e0e0;border:none;padding:0.3rem 0.7rem;border-radius:4px;cursor:pointer" data-action="refresh-users">🔄 Actualizar</button>
+  </h1>`;
 
   const userFecha = {};
   Object.keys(state.usersMap).forEach(uid => {

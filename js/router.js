@@ -44,23 +44,17 @@ function render() {
 
   document.getElementById('root').innerHTML = buildNavbar() + '<main class="main-content">' + content + '</main>';
 
-  // Admin pagos listener
+  // Admin pagos — single get (no real-time)
   if (page === '/admin/pagos' && !unsubPagos) {
     loadCachedUsers();
-    unsubPagos = db.collection('users').onSnapshot(() => {
-      loadCachedUsers();
-      render();
-    });
+    unsubPagos = true; // mark as loaded
   }
 
-  // All predictions listener (posiciones)
+  // All predictions — single get (no real-time)
   if (page === '/posiciones' && !unsubAllPredictions) {
     loadCachedUsers();
-    unsubAllPredictions = db.collection('predictions').where('scored', '==', true).onSnapshot(snap => {
-      state.allPredictions = {};
-      snap.docs.forEach(d => { state.allPredictions[d.id] = { id: d.id, ...d.data() }; });
-      render();
-    });
+    loadAllPredictions();
+    unsubAllPredictions = true;
   }
 
   // Predictions listener (home + pronosticos)
