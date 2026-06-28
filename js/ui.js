@@ -432,7 +432,7 @@ function buildPosiciones() {
   let html = `<div class="container">
     <h1>🏆 Posiciones</h1>`;
 
-  const filter = state.selectedPosicionesFilter || '3';
+  const filter = state.selectedPosicionesFilter || 'elim';
 
   const mdLabels = { '1': 'Fecha 1', '2': 'Fecha 2', '3': 'Fecha 3', 'elim': 'Eliminatorias' };
   html += `<select class="filter-select" data-action="filter-posiciones">`;
