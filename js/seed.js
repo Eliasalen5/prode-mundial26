@@ -126,11 +126,11 @@ function getSeedData() {
   addKO('8avos','07-07','13:00','Ganador 61','Ganador 62');
   addKO('8avos','07-07','17:00','Ganador 63','Ganador 64');
 
-  // Cuartos — Jul 9–10
-  addKO('Cuartos','07-09','13:00','Ganador 65','Ganador 66');
-  addKO('Cuartos','07-09','17:00','Ganador 67','Ganador 68');
-  addKO('Cuartos','07-10','13:00','Ganador 69','Ganador 70');
-  addKO('Cuartos','07-10','17:00','Ganador 71','Ganador 72');
+  // Cuartos — Jul 9–11
+  addKO('Cuartos','07-09','17:00','Ganador 65','Ganador 66');
+  addKO('Cuartos','07-10','16:00','Ganador 69','Ganador 70');
+  addKO('Cuartos','07-11','18:00','Ganador 67','Ganador 68');
+  addKO('Cuartos','07-11','22:00','Ganador 71','Ganador 72');
 
   // Semis — Jul 14–15
   addKO('Semis','07-14','16:00','Ganador 73','Ganador 74');
