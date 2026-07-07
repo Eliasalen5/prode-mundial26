@@ -1,6 +1,6 @@
 function isFeatured(i) {
   // F1: BRA-MAR(6) ARG-ALG(19) ENG-CRO(22) | F2: MEX-KOR(28) BRA-HAI(31) NED-SWE(33) ARG-AUT(41) | F3: GER-ECU(56) ESP-URU(64) POR-COL(69) ARG-JOR(72)
-  return [6, 19, 22, 28, 31, 33, 41, 56, 64, 69, 72].includes(i);
+  return [6, 19, 22, 28, 31, 33, 41, 56, 64, 69, 72, 104].includes(i);
 }
 
 function getSeedData() {
